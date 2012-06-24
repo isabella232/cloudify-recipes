@@ -18,6 +18,7 @@ import org.hyperic.sigar.OperatingSystem
 import org.cloudifysource.dsl.context.ServiceContextFactory
 import org.cloudifysource.dsl.context.ServiceContext
 import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
 import static Shell.*
 
 class ChefBootstrap {
