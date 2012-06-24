@@ -203,7 +203,7 @@ report_handlers << ::Cloudify::ChefOutputHandler("${pathJoin(chefTmpPath, node.j
     }
 
     private Map readChefOutputAttributes() { 
-       return new JsonSlurper.parse(new File(chefTmpPath, "node.json"))
+       return new JsonSlurper().parse(new File(chefTmpPath, "node.json"))
     }
 }
 
