@@ -106,7 +106,7 @@ file_cache_path    "/var/chef/cache"
 file_backup_path  "/var/chef/backup"
 pid_file           "/var/run/chef/client.pid"
 Chef::Log::Formatter.show_time = true
-report_handlers << ::Cloudify::ChefOutputHandler("${pathJoin(chefTmpPath, node.json)}")
+report_handlers << ::Cloudify::ChefOutputHandler("${pathJoin(chefTmpPath, "node.json")}")
 """)
         if (chefConfig.validationCert) {
             sudoWriteFile("/etc/chef/validation.pem", chefConfig.validationCert)
@@ -133,7 +133,7 @@ report_handlers << ::Cloudify::ChefOutputHandler("${pathJoin(chefTmpPath, node.j
         """
 file_cache_path "/tmp/chef-solo"
 cookbook_path "/tmp/chef-solo/cookbooks"
-report_handlers << ::Cloudify::ChefOutputHandler("${pathJoin(chefTmpPath, node.json)}")
+report_handlers << ::Cloudify::ChefOutputHandler("${pathJoin(chefTmpPath, "node.json")}")
         """
         def chef_solo = which("chef-solo")
         assert ! chef_solo.isEmpty()
