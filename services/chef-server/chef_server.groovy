@@ -4,7 +4,7 @@ import static Shell.*
 def context = ServiceContextFactory.getServiceContext() 
 
 bootstrap = ChefBootstrap.getBootstrap(installFlavor:"gem")
-bootstrap.runSolo([
+Map chef_server_attributes = bootstrap.runSolo([
     "chef_server": [
         "server_url": "http://localhost:8080",
         "init_style": "runit"
@@ -26,5 +26,5 @@ bootstrap.runSolo([
 
 
 // eventually we will want to use a global attribute
-context.attributes.thisApplication["chef_validation.pem"] = sudoReadFile("/etc/chef/validation.pem")
-
+context.attributes.global["chef_validation.pem"] = sudoReadFile("/etc/chef/validation.pem")
+context.attributes.global["chef_server_url"] = chef_server_attributes["chef_server"]["url"]

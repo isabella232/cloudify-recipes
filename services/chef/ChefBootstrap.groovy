@@ -24,9 +24,10 @@ class ChefBootstrap {
     Map chefConfig
     def osConfig
     def os
-    def chefBinPath
+    String chefBinPath
     ServiceContext context = null
-    def opscode_gpg_key_url = "http://apt.opscode.com/packages@opscode.com.gpg.key"
+    String opscode_gpg_key_url = "http://apt.opscode.com/packages@opscode.com.gpg.key"
+    String chefTmpPath = "/var/chef/tmp"
 
     def static getBootstrap(options=[:]) {
         def os = OperatingSystem.getInstance()
@@ -85,10 +86,14 @@ class ChefBootstrap {
     def mkChefDirs() {
         sudo("mkdir -p /etc/chef")
         sudo("mkdir -p /var/chef /var/log/chef")
+        sudo("mkdir -p ${chefTmpPath}")
+        
     }
     def configureClient() {
         mkChefDirs()
+        copyChefHandler()
         sudoWriteFile("/etc/chef/client.rb", """
+require "/var/chef/handlers/ChefOutputHandler.rb"
 log_level          :info
 log_location       "/var/log/chef/client.log"
 ssl_verify_mode    :verify_none
@@ -100,6 +105,7 @@ file_cache_path    "/var/chef/cache"
 file_backup_path  "/var/chef/backup"
 pid_file           "/var/run/chef/client.pid"
 Chef::Log::Formatter.show_time = true
+report_handlers << ::Cloudify::ChefOutputHandler("${pathJoin(chefTmpPath, node.json)}")
 """)
         if (chefConfig.validationCert) {
             sudoWriteFile("/etc/chef/validation.pem", chefConfig.validationCert)
@@ -107,39 +113,47 @@ Chef::Log::Formatter.show_time = true
             sudo("cp ${System.properties["user.home"]}/gs-files/validation.pem /etc/chef/validation.pem")
         }
     }
-    def runClient(ArrayList runList) {
+    Map runClient(ArrayList runList) {
         runClient(runListToInitialJson(runList))
     }
-    def runClient(HashMap initJson=[:]) {
+    Map runClient(HashMap initJson=[:]) {
         configureClient()
         initJson["cloudify"] = context.attributes.thisService["chef"]
         def jsonFile = new File(pathJoin(context.getServiceDirectory(), "chef_client.json"))
         jsonFile.withWriter() { it.write(JsonOutput.toJson(initJson)) }
         sudo("chef-client -j ${jsonFile.getPath()}")
+        return readChefOutputAttributes()
     }
-    def runSolo(ArrayList runList) {
+    Map runSolo(ArrayList runList) {
         runSolo(runListToInitialJson(runList))
     }
-    def runSolo(HashMap initJson=[:]) {
+    Map runSolo(HashMap initJson=[:]) {
         def soloConf = new File([context.getServiceDirectory(), "solo.rb"].join(File.separator)).text =
         """
 file_cache_path "/tmp/chef-solo"
 cookbook_path "/tmp/chef-solo/cookbooks"
+report_handlers << ::Cloudify::ChefOutputHandler("${pathJoin(chefTmpPath, node.json)}")
         """
         def chef_solo = which("chef-solo")
         assert ! chef_solo.isEmpty()
         def jsonFile = new File(pathJoin(context.getServiceDirectory(), "bootstrap_server.json"))
         jsonFile.text = JsonOutput.toJson(initJson)
+        copyChefHandler()
         sudo("""${chef_solo} -c ${context.getServiceDirectory()}/solo.rb -j ${jsonFile} -r ${chefConfig.bootstrapCookbooksUrl}""")
+        return readChefOutputAttributes()
     }
-    def runListToInitialJson(ArrayList runList) {
+    private def copyChefHandler() {
+        sudo("mkdir -p /var/chef/handlers")
+        sudo("cp ${pathJoin(context.getServiceDirectory(), "ChefOutputHandler.rb")} /var/chef/handlers")
+    }
+    private def runListToInitialJson(ArrayList runList) {
         def initJson = [:]
         if (!runList.isEmpty()) {
             initJson["run_list"] = runList
         }
         return initJson
     }
-    def fatBinaryInstall() {
+    private def fatBinaryInstall() {
         chefBinPath = "/opt/opscode/bin"
         new AntBuilder().sequential {
             mkdir(dir:osConfig.installDir)
@@ -152,7 +166,7 @@ cookbook_path "/tmp/chef-solo/cookbooks"
         }
         sudo("""${osConfig.installDir}/${osConfig.installer}""")
     }
-    def rvm() {
+    private def rvm() {
         // not implemented yet
         println "RVM install method is not implemented yet"
     }
@@ -185,6 +199,10 @@ cookbook_path "/tmp/chef-solo/cookbooks"
                 path = binPath
         }
         return path
+    }
+
+    private Map readChefOutputAttributes() { 
+       return new JsonSlurper.parse(new File(chefTmpPath, "node.json"))
     }
 }
 
