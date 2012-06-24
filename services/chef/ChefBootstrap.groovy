@@ -106,7 +106,7 @@ file_cache_path    "/var/chef/cache"
 file_backup_path  "/var/chef/backup"
 pid_file           "/var/run/chef/client.pid"
 Chef::Log::Formatter.show_time = true
-report_handlers << ::Cloudify::ChefOutputHandler("${pathJoin(chefTmpPath, "node.json")}")
+report_handlers << ::Cloudify::ChefOutputHandler.new("${pathJoin(chefTmpPath, "node.json")}")
 """)
         if (chefConfig.validationCert) {
             sudoWriteFile("/etc/chef/validation.pem", chefConfig.validationCert)
@@ -131,9 +131,10 @@ report_handlers << ::Cloudify::ChefOutputHandler("${pathJoin(chefTmpPath, "node.
     Map runSolo(HashMap initJson=[:]) {
         def soloConf = new File([context.getServiceDirectory(), "solo.rb"].join(File.separator)).text =
         """
+require "/var/chef/handlers/ChefOutputHandler.rb"
 file_cache_path "/tmp/chef-solo"
 cookbook_path "/tmp/chef-solo/cookbooks"
-report_handlers << ::Cloudify::ChefOutputHandler("${pathJoin(chefTmpPath, "node.json")}")
+report_handlers << ::Cloudify::ChefOutputHandler.new("${pathJoin(chefTmpPath, "node.json")}")
         """
         def chef_solo = which("chef-solo")
         assert ! chef_solo.isEmpty()
@@ -203,7 +204,7 @@ report_handlers << ::Cloudify::ChefOutputHandler("${pathJoin(chefTmpPath, "node.
     }
 
     private Map readChefOutputAttributes() { 
-       return new JsonSlurper().parse(new File(chefTmpPath, "node.json"))
+       return new File(chefTmpPath, "node.json").withReader() { new JsonSlurper().parse(it) }
     }
 }
 
