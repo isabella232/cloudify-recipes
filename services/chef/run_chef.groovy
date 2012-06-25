@@ -8,7 +8,7 @@ def validationCert = context.attributes.global["chef_validation.pem"]
 
 println "Using Chef server URL: ${chefServerURL}"
 
-ChefBootstrap.getBootstrap(
+Map node_attributes = ChefBootstrap.getBootstrap(
     serverURL: chefServerURL,
     validationCert: validationCert,
     context: context
