@@ -7,7 +7,7 @@ module Cloudify
 
     def report
       File.open(@output_file, "w") do |f|
-        f.write merge_attributes(run_status.node)
+        f.write ::Chef::JSONCompat.to_json(merge_attributes(run_status.node))
       end
     end
     
@@ -21,9 +21,9 @@ module Cloudify
       end
       return node.inject(Hash.new) do |h, (k, v)|
         h[k] = merge_attributes(v)
+        h
       end
     end
-
   end
 end
 

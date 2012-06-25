@@ -129,6 +129,7 @@ report_handlers << ::Cloudify::ChefOutputHandler.new("${pathJoin(chefTmpPath, "n
         runSolo(runListToInitialJson(runList))
     }
     Map runSolo(HashMap initJson=[:]) {
+        sudo("mkdir -p ${chefTmpPath}")
         def soloConf = new File([context.getServiceDirectory(), "solo.rb"].join(File.separator)).text =
         """
 require "/var/chef/handlers/ChefOutputHandler.rb"
