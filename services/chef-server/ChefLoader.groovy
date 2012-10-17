@@ -21,10 +21,13 @@ class ChefLoader{
            switch (type) {
             case "git":
                 return new ChefGitLoader()
+                //break unneeded
             case "svn":
                 return new ChefSvnLoader()
+                //break unneeded
             case "tar":
                 return new ChefTarLoader()
+                //break unneeded
             default:
               throw new Exception("Unrecognized type(${type}), please use one of: 'git', 'svn' or 'tar'")
             }
@@ -90,6 +93,14 @@ cookbook_path [ '${underHomeDir("cookbooks")}' ]
         if (pathExists(roles_dir)) {
             sudo("knife role from file ${pathJoin(roles_dir, "*.rb")}")
         }
+    }
+
+    def listCookbooks() {
+        sudoShellOut("knife cookbook list")
+    }
+
+    def invokeKnife(args = []) {
+        sudoShellOut("knife " + args.join(" "))
     }
 
     def cleanup_local_repo() {
