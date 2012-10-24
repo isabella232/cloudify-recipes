@@ -26,7 +26,9 @@ class PuppetBootstrap {
     def os
     ServiceContext context = null
     def puppetPackages = ["puppet"]
-    String local_repo_dir = underHomeDir("cloudify-recipes")
+    String local_repo_dir = underHomeDir("cloudify/puppet")
+    String local_custom_facts = "/opt/cloudify/puppet/facts"
+    String metadata_file = "/opt/cloudify/metadata.json"
 
     // factory method for getting the appropriate bootstrap class
     def static getBootstrap(options=[:]) {
@@ -66,14 +68,32 @@ class PuppetBootstrap {
     }
 
     def install(options) { 
-        def templates_dir = pathJoin(context.getServiceDirectory(),"templates")
-        def puppetConfTemplate = new File(templates_dir, "puppet.conf").getText()
+        def templatesDir = pathJoin(context.getServiceDirectory(),"templates")
         def templateEngine = new groovy.text.SimpleTemplateEngine()
-        def binding = [environment: puppetConfig.environment, server: puppetConfig.server]
-        sudoWriteFile("/etc/puppet/puppet.conf", 
-                      templateEngine.createTemplate(puppetConfTemplate).make(binding).toString()) 
+        def puppetConfTemplate = new File(templatesDir, "puppet.conf").getText()
+        def puppetConf = templateEngine.createTemplate(puppetConfTemplate).make(
+                            [environment: puppetConfig.environment,
+                            server: puppetConfig.server,
+                            cloudify_module_path:pathJoin(local_repo_dir, "modules")]
+                        )
+        sudoWriteFile("/etc/puppet/puppet.conf", puppetConf.toString())
 
-        sh("mkdir -p ${local_repo_dir}")
+        sh("mkdir -p '${local_repo_dir}'")
+
+        //import facter plugin
+        def custom_facts_dir = pathJoin(context.getServiceDirectory(),"custom_facts")
+        sudo("mkdir -p ${local_custom_facts}")
+        sudo("cp -r '${custom_facts_dir}'/* '${local_custom_facts}'")
+
+        //write down the management machine and instance metadata for use by puppet modules
+        def metadata = [:]
+        metadata["managementIP"] = System.getenv("LOOKUPLOCATORS").split(":")[0]
+        metadata["application"] = context.getApplicationName()
+        metadata["service"] = context.getServiceName()
+        metadata["instanceID"] = context.getInstanceId()
+        def tmp_file = File.createTempFile("metadata", "json")
+        tmp_file.withWriter() { it.write(JsonOutput.toJson(metadata)) }
+        sudo("mv '${tmp_file}' '${metadata_file}'")
     }
 
     def loadManifest(repoType, repoUrl) {
@@ -87,7 +107,7 @@ class PuppetBootstrap {
             if (pathExists(git_dir)) {
                 sh("cd ${local_repo_dir}; git pull origin master")
             } else {
-                sh("git clone ${repoUrl} ${local_repo_dir}")
+                sh("git clone --recursive ${repoUrl} ${local_repo_dir}")
             }
             break
         case "svn":
@@ -98,13 +118,13 @@ class PuppetBootstrap {
             if (pathExists(svn_dir)) {
                 sh("cd ${local_repo_dir}; svn update")
             } else {
-                sh("svn co ${repoUrl} ${local_repo_dir}")
+                sh("svn co '${repoUrl}' '${local_repo_dir}'")
             }
             break
         case "tar":
             String local_tarball_path = underHomeDir("manifests.tgz")
             download(local_tarball_path, repoUrl)
-            sh("tar -xzf ${local_tarball_path} -C ${local_repo_dir}")
+            sh("tar -xzf '${local_tarball_path}' -C '${local_repo_dir}'")
             break
         default:
             throw new Exception("Unrecognized type '${repoType}', please use one of: 'git', 'svn' or 'tar'")
@@ -116,8 +136,32 @@ class PuppetBootstrap {
         sudo("puppet apply ${manifest}")
     }
 
+    def to_puppet(ArrayList expr) {
+        "[" + expr.collect() { i -> "\"${i}\"" }.join(",\n") + "]"
+    }
+    def to_puppet(Map expr) {
+        "{\n" + expr.collect() { k, v -> "${k} => ${to_puppet(v)}"}.join(",\n") + "}"
+    }
+    def to_puppet(expr) {
+        expr.toString()
+    }
+
+    def applyClasses(Map classes) {
+        puppetExecute(
+            classes.collect() { kls, params ->
+                "class{'${kls}':\n" +
+                to_puppet(params)[1..-1]// slice of the first curly cause it isn't really a hash
+            }.join("\n")
+        )
+    }
+    def puppetExecute(puppetCode) {
+        File tmp_file = File.createTempFile("apply_manifest", ".pp")
+        tmp_file.withWriter { it.write(puppetCode)}
+        sudo("puppet apply ${tmp_file}")
+    }
+
     def cleanup_local_repo() {
-        sh("rm -rf ${pathJoin(local_repo_dir,"*")}")
+        sh("rm -rf '${pathJoin(local_repo_dir,"*")}'")
     }
 }
 
@@ -148,6 +192,8 @@ class DebianBootstrap extends PuppetBootstrap {
 }
 
 class RHELBootstrap extends PuppetBootstrap {
+    def puppetPackages = super.puppetPackages + ["rubygem-json"]
+
     def RHELBootstrap(options) { super(options) }
 
     def install(options) {
@@ -171,6 +217,8 @@ class RHELBootstrap extends PuppetBootstrap {
 }
 
 class AmazonBootstrap extends PuppetBootstrap {
+    def puppetPackages = super.puppetPackages + ["rubygem-json"]
+
     def AmazonBootstrap(options) { super(options) }
 
     def install(options) {
@@ -182,6 +230,7 @@ class AmazonBootstrap extends PuppetBootstrap {
         //the puppet repo is already available on amazon linux
         sudo("yum install -y ${pkgs.join(" ")}")
     }
+
 }
 
 class SuSEBootstrap extends PuppetBootstrap {
