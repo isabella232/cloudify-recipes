@@ -13,21 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  ****************************************************************************** */
+def debug_hook(List args) { return ['tmux.sh'] + args }
+def debug_hook(String arg) { return ['tmux.sh', arg] }
+def debug_hook(GString arg) { return ['tmux.sh', arg] }
+def debug_hook(Map args) { return args.inject([:]) {h, k ,v -> h[k] = debug_hook(v); h }}
 
 service { 
     name "debug"
-
-    def debug_hook(List args) { return ['tmux.sh'] + args }
-    def debug_hook(String arg) { return ['tmux.sh', arg] }
-    def debug_hook(GStringImpl arg) { return ['tmux.sh', arg] }
-    def debug_hook(Map args) { return args.inject([:]) {h, k ,v -> h[k] = debug_hook(v); h }
 
     compute {
         template "SMALL_UBUNTU"
     }
 
     lifecycle{
-        
         preInstall "install_and_run_tmux.sh"
         install debug_hook("testInstall.groovy")
     }
