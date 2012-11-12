@@ -1,5 +1,5 @@
 #! /usr/bin/env groovy
-println("Welcome to testInstall.groovy\n")
+println("Welcome to printContext.groovy\n")
 
 import org.cloudifysource.dsl.context.ServiceContextFactory
 import org.cloudifysource.dsl.context.ServiceContext

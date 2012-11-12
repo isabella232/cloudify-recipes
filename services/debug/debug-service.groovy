@@ -27,6 +27,5 @@ service {
 
     lifecycle{
         preInstall "install_and_run_tmux.sh"
-        install debug_hook("testInstall.groovy")
     }
 }

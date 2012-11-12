@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit
 import PuppetBootstrap
 import static Shell.*
 
-service { 
+service {
     extend "../groovy-utils"
     name "puppet"
     icon "puppet.png"
