@@ -15,9 +15,9 @@
 *******************************************************************************/
 
 //TODO: put these debug definitions manually in a jcommon ar file (or something similar)
-def debug_hook(List args) { return ['tmux.sh'] + args }
-def debug_hook(String arg) { return ['tmux.sh', arg] }
-def debug_hook(GString arg) { return ['tmux.sh', arg] }
+def debug_hook(List args) { return ['debug-hook.sh'] + args }
+def debug_hook(String arg) { return debug_hook([arg]) }
+def debug_hook(GString arg) { return debug_hook([arg.toString()]) }
 def debug_hook(Map args) { return args.inject([:]) {h, k ,v -> h[k] = debug_hook(v); h }}
 
 service {
