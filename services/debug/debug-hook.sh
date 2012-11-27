@@ -5,7 +5,7 @@
 function write_script () {
     echo >>$HOME/debugrc "$@"
 }
-write_script 'the cloudify env variables for this event:'
+write_script '#the cloudify environment variables for this event:'
 printenv | grep -E "^(CLOUDIFY|USM|LOOKUP)" | while read var; do write_script export $var; done
 write_script ''
 write_script 'cd $HOME/gigaspaces/work/processing-units/${USM_APPLICATION_NAME}_${USM_SERVICE_NAME}_${USM_INSTANCE_ID}/ext'
@@ -13,7 +13,7 @@ write_script 'export JAVA_HOME=$HOME/java'
 write_script 'export CLASSPATH=`find $HOME/gigaspaces -name *.jar | paste -sd:`'
 write_script 'export PATH=$HOME/gigaspaces/tools/groovy/bin:$PATH'
 write_script ''
-write_script 'echo -n "starting a debugging session"'
+write_script 'echo -n "Starting a debugging session"'
 [[ -n "$1"  ]] && write_script "echo ' for hook $1'" || write_script "echo ''"
 
 #TODO: move these to be with the other (yet unwritten) debug aliases
