@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2011 GigaSpaces Technologies Ltd. All rights reserved
+* Copyright (c) 2012 GigaSpaces Technologies Ltd. All rights reserved
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -34,10 +34,10 @@ service {
 			def currPublicIP
 			
 			if (  context.isLocalCloud()  ) {
-				currPublicIP = InetAddress.localHost.hostAddress
+				currPublicIP = InetAddress.localHost.hostAddress				
 			}
 			else {
-				currPublicIP =System.getenv()["CLOUDIFY_AGENT_ENV_PUBLIC_IP"]
+				currPublicIP =context.getPublicAddress()				
 			}
 			def baseURL	= "http://${currPublicIP}:${httpPort}"
 							
@@ -76,7 +76,7 @@ service {
 				}
 				println "play-service.groovy: privateIP is ${privateIP} ..."
 				
-				def currURL="http://${privateIP}:${httpPort}/${applicationCtxPath}"
+				def currURL="http://${privateIP}:${httpPort}"
 				println "play-service.groovy: About to add ${currURL} to apacheLB ..."
 				apacheService.invoke("addNode", currURL as String, instanceID as String)			                 
 				println "play-service.groovy: play Post-start ended"
@@ -99,7 +99,7 @@ service {
 						}				
 						
 						println "play-service.groovy: privateIP is ${privateIP} ..."
-						def currURL="http://${privateIP}:${httpPort}/${applicationCtxPath}"
+						def currURL="http://${privateIP}:${httpPort}"
 						println "play-service.groovy: About to remove ${currURL} from apacheLB ..."
 						apacheService.invoke("removeNode", currURL as String, instanceID as String)
 					}

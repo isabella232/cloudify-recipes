@@ -1,5 +1,5 @@
 												/*******************************************************************************
-* Copyright (c) 2011 GigaSpaces Technologies Ltd. All rights reserved
+* Copyright (c) 2012 GigaSpaces Technologies Ltd. All rights reserved
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -24,25 +24,20 @@ service {
 		template "SMALL_LINUX"
 	}
 
-	lifecycle {
-	
-	
+	lifecycle {	
+
 		details {
 			def currPublicIP
-			
 			if (  context.isLocalCloud()  ) {
-				currPublicIP = InetAddress.localHost.hostAddress
+				currPublicIP = InetAddress.localHost.hostAddress				
 			}
 			else {
-				currPublicIP =System.getenv()["CLOUDIFY_AGENT_ENV_PUBLIC_IP"]
+				currPublicIP =context.getPublicAddress()
 			}
 			def loadBalancerURL	= "http://${currPublicIP}:${currentPort}"
-			def balancerManagerURL = "${loadBalancerURL}/balancer-manager"
-			
+			def balancerManagerURL = "${loadBalancerURL}/balancer-manager"			
 			def ctxPath=("default" == context.applicationName)?"":"${context.applicationName}"
-			
 			def applicationURL = "${loadBalancerURL}/${ctxPath}"
-		
 				return [
 					"BalancerManager URL":"<a href=\"${balancerManagerURL}\" target=\"_blank\">${balancerManagerURL}</a>",
 					"Application URL":"<a href=\"${applicationURL}\" target=\"_blank\">${applicationURL}</a>"

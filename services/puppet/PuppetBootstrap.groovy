@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2011 GigaSpaces Technologies Ltd. All rights reserved
+* Copyright (c) 2012 GigaSpaces Technologies Ltd. All rights reserved
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -28,7 +28,9 @@ class PuppetBootstrap {
     def puppetPackages = ["puppet"]
     String local_repo_dir = underHomeDir("cloudify/puppet")
     String local_custom_facts = "/opt/cloudify/puppet/facts"
+    String cloudify_module_dir = "/opt/cloudify/puppet/modules/cloudify"
     String metadata_file = "/opt/cloudify/metadata.json"
+    String log_file = "/var/log/puppet/cloudify"
 
     // factory method for getting the appropriate bootstrap class
     def static getBootstrap(options=[:]) {
@@ -81,13 +83,16 @@ class PuppetBootstrap {
         sh("mkdir -p '${local_repo_dir}'")
 
         //import facter plugin
+        sudo("mkdir -p ${local_custom_facts} ${cloudify_module_dir}")
         def custom_facts_dir = pathJoin(context.getServiceDirectory(),"custom_facts")
-        sudo("mkdir -p ${local_custom_facts}")
         sudo("cp -r '${custom_facts_dir}'/* '${local_custom_facts}'")
+        def additional_lib_dir = pathJoin(context.getServiceDirectory(),"lib")
+        sudo("cp -r '${additional_lib_dir}' '${cloudify_module_dir}'/")
 
         //write down the management machine and instance metadata for use by puppet modules
         def metadata = [:]
         metadata["managementIP"] = System.getenv("LOOKUPLOCATORS").split(":")[0]
+        metadata["REST_port"] = 8100
         metadata["application"] = context.getApplicationName()
         metadata["service"] = context.getServiceName()
         metadata["instanceID"] = context.getInstanceId()
@@ -131,33 +136,48 @@ class PuppetBootstrap {
         }
     }
 
-    def appplyManifest(manifestPath="manifests/site.pp") {
-        def manifest = pathJoin(local_repo_dir, manifestPath)
-        sudo("puppet apply ${manifest}")
+    def applyManifest(manifestPath="manifests/site.pp", manifestSource="repo") {
+        String manifest
+        switch (manifestSource) {
+        case "repo":
+            manifest = pathJoin(local_repo_dir, manifestPath)
+            break
+        case "service":
+            manifest = pathJoin(context.getServiceDirectory(), manifestPath)
+            break
+        default:
+            throw new Exception("Unrecognized manifest source '${manifestSource}', please use either 'repo' or 'service'")
+        }
+        puppetApply(manifest)
     }
 
-    def to_puppet(ArrayList expr) {
-        "[" + expr.collect() { i -> "\"${i}\"" }.join(",\n") + "]"
+    def toPuppet(ArrayList expr) {
+        "[" + expr.collect() { i -> toPuppet(i) }.join(",\n") + "]"
     }
-    def to_puppet(Map expr) {
-        "{\n" + expr.collect() { k, v -> "${k} => ${to_puppet(v)}"}.join(",\n") + "}"
+    def toPuppet(Map expr) {
+        "{\n" + expr.collect() { k, v -> "${k} => ${toPuppet(v)}"}.join(",\n") + "}"
     }
-    def to_puppet(expr) {
-        expr.toString()
+    def toPuppet(expr) {
+        "\"${expr}\""
     }
 
     def applyClasses(Map classes) {
         puppetExecute(
             classes.collect() { kls, params ->
                 "class{'${kls}':\n" +
-                to_puppet(params)[1..-1]// slice of the first curly cause it isn't really a hash
+                toPuppet(params)[1..-1]// slice off the first curly cause it isn't really a hash
             }.join("\n")
         )
     }
+
     def puppetExecute(puppetCode) {
         File tmp_file = File.createTempFile("apply_manifest", ".pp")
         tmp_file.withWriter { it.write(puppetCode)}
-        sudo("puppet apply ${tmp_file}")
+        puppetApply(tmp_file)
+    }
+
+    def puppetApply(filepath) {
+        sudo("puppet apply ${filepath} 2>&1 | sudo tee -a ${log_file}")
     }
 
     def cleanup_local_repo() {

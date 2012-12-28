@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2011 GigaSpaces Technologies Ltd. All rights reserved
+* Copyright (c) 2012 GigaSpaces Technologies Ltd. All rights reserved
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ new AntBuilder().sequential {
 		arg value:"-port"
 		arg value:"9160"
 		arg value:"-f"
-		arg value:"cassandraSchema.txt"
+		arg value:"cassandraKeyspace.txt"
 	}
 	exec(executable:"${script}.bat", osfamily:"windows") {
 		arg value:"-host"
@@ -36,7 +36,7 @@ new AntBuilder().sequential {
 		arg value:"-port"
 		arg value:"9160"
 		arg value:"-f"
-		arg value:"cassandraSchema.txt"
+		arg value:"cassandraKeyspace.txt"
 	}
 	echo(message:"created cassandra schema")
 }
