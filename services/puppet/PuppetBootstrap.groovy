@@ -104,6 +104,16 @@ class PuppetBootstrap {
     def loadManifest(repoType, repoUrl) {
         /*stuff like in ChefLoader -- TODO Refactoring into groovy-utils after resolving CLOUDIFY-1147*/
         switch (repoType) {
+        case "librarian":
+            if (! test("which librarian-puppet > /dev/null")) {
+                resource("package", "librarian", ensure: "present", provider:"gem")
+            }
+            puppetfileURI = new URI(puppetConfig["Puppetfile"])
+            if (! puppetfileURI.getScheme().is(null)) {
+                download("Puppetfile", puppetfileURI)
+            }
+            sh("librarian-puppet install --path ${pathJoin(local_repo_dir, "modules")}")
+            break
         case "git":
             if (! test("which git >/dev/null")) {
                 installPkgs(["git"])
@@ -178,6 +188,10 @@ class PuppetBootstrap {
 
     def puppetApply(filepath) {
         sudo("puppet apply ${filepath} 2>&1 | sudo tee -a ${log_file}")
+    }
+
+    def resource(type, name, opts=[:]) {
+        sudo("puppet resource ${type} ${name} ${opts.collect{k,v -> k + "=" + v}.join(" ")}")   
     }
 
     def cleanup_local_repo() {

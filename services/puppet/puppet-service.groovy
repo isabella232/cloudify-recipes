@@ -34,8 +34,10 @@ service {
         if (binding.variables["puppetRepo"]) {
             bootstrap.loadManifest(puppetRepo.repoType, puppetRepo.repoUrl)
             if (puppetRepo.manifestPath) {
+                println "Applying manifest " + puppetRepo.manifestPath
                 bootstrap.applyManifest(puppetRepo.manifestPath)
             } else if (puppetRepo.classes) {
+                println "Applying Puppet classes " + puppetRepo.classes.keySet().join(", ")
                 bootstrap.applyClasses(puppetRepo.classes)
             } else {
                 println "Puppet repository loaded but nothing was applied."
