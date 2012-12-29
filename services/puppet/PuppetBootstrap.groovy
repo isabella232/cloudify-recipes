@@ -106,13 +106,13 @@ class PuppetBootstrap {
         switch (repoType) {
         case "librarian":
             if (! test("which librarian-puppet > /dev/null")) {
-                resource("package", "librarian", ensure: "present", provider:"gem")
+                puppetApply(pathJoin(context.getServiceDirectory(), "manifests", "librarian.pp"))
             }
-            puppetfileURI = new URI(puppetConfig["Puppetfile"])
+            def puppetfileURI = new URI(puppetConfig["Puppetfile"])
             if (! puppetfileURI.getScheme().is(null)) {
                 download("Puppetfile", puppetfileURI)
             }
-            sh("librarian-puppet install --path ${pathJoin(local_repo_dir, "modules")}")
+            sh(["librarian-puppet", "install", "--path", pathJoin(local_repo_dir, "modules")], false, [cwd: context.getServiceDirectory()])
             break
         case "git":
             if (! test("which git >/dev/null")) {
@@ -190,7 +190,7 @@ class PuppetBootstrap {
         sudo("puppet apply ${filepath} 2>&1 | sudo tee -a ${log_file}")
     }
 
-    def resource(type, name, opts=[:]) {
+    def puppetResource(opts=[:], type, name) {
         sudo("puppet resource ${type} ${name} ${opts.collect{k,v -> k + "=" + v}.join(" ")}")   
     }
 
@@ -251,12 +251,17 @@ class RHELBootstrap extends PuppetBootstrap {
 }
 
 class AmazonBootstrap extends PuppetBootstrap {
-    def puppetPackages = super.puppetPackages + ["rubygem-json"]
+    // Amazon puppet packages are old and puppetlabs repo doesn't support Amazon linux, so let's install from gems
+    def puppetPackages = ["ruby", "ruby-devel", "rubygems", "rubygem-json"]
 
     def AmazonBootstrap(options) { super(options) }
 
     def install(options) {
         installPkgs(puppetPackages)
+        sudo("gem install puppet --no-rdoc --no-ri")
+        sudo("mkdir -p -m 0755 /var/log/puppet /etc/puppet /var/lib/puppet")
+        sudo("groupadd puppet")
+        sudo("useradd -g puppet -s /sbin/nologin puppet")
         return super.install(options)
     }
 
