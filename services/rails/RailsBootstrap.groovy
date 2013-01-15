@@ -116,13 +116,13 @@ class RailsBootstrap {
         }
     }
 
-    def writeTemplate(templatePath, options=webappConfig, targetPath=null) {
+    def writeTemplate(templatePath, variables=webappConfig, targetPath=null) {
         targetPath = targetPath ?: pathJoin(webapp_dir, templatePath)
         String templatesDir = pathJoin(context.getServiceDirectory(),"templates")
         def templateEngine = new groovy.text.SimpleTemplateEngine()
 
         def template = new File(templatesDir, templatePath).getText()
-        def preparedTemplate = templateEngine.createTemplate(template).make([options: options])
+        def preparedTemplate = templateEngine.createTemplate(template).make(variables)
         sudoWriteFile(targetPath, preparedTemplate.toString())
     }
 
