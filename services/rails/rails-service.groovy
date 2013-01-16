@@ -34,6 +34,13 @@ service {
                 throw new Exception("Rails application options were not specified - \
                                      please add the webappOpts property")
 
+            //override the db properties using the (first and only) mysql service of this application
+            def mysqlInstance = context.attributes.mysql.instances[1]
+            webappOpts["db"]["host"]     = mysqlInstance.dbHost
+            webappOpts["db"]["database"] = mysqlInstance.dbName
+            webappOpts["db"]["username"] = mysqlInstance.dbUser
+            webappOpts["db"]["password"] = mysqlInstance.dbPassW
+
             bootstrap = RailsBootstrap.getBootstrap(context:context, webappOpts:webappOpts)
             bootstrap.install()
 
