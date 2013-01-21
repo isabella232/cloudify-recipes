@@ -13,8 +13,24 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 *******************************************************************************/
-puppetRepo = [ 
-  "repoType": "tar",
-  "repoUrl": "http://fewbytes-development.s3.amazonaws.com/clients/gigaspaces/manifests.tgz",
-  "manifestPath": "manifests/site.pp"
-]
+
+service {
+    extend "../../../services/puppet"
+    name "mysql"
+    type "DATABASE"
+
+    compute {
+        template "SMALL_UBUNTU"
+    }
+
+    lifecycle {
+        startDetectionTimeoutSecs 600
+        startDetection {
+            ServiceUtils.isPortOccupied(3306)
+        }
+
+        stopDetection {
+            !(ServiceUtils.isPortOccupied(3306))
+        }
+    }
+}

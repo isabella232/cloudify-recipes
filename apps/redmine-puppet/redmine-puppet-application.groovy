@@ -15,12 +15,14 @@
 *******************************************************************************/
 
 application {
-    name = "hello-puppet"
-    
-    service {
-        name = "tar"
-    }
+    name = "redmine-puppet"
+
     service {
         name = "mysql"
+    }
+
+    service {
+        name = "webapp"
+        dependsOn = ["mysql"]
     }
 }

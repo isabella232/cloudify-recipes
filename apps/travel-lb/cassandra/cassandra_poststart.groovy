@@ -13,18 +13,30 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 *******************************************************************************/
+import groovy.util.ConfigSlurper
+import org.cloudifysource.dsl.context.ServiceContextFactory
 
-service {
-    extend "../../../services/puppet"
-    name "mysql"
-    type "APP_SERVER"
-    
-    elastic true
-    numInstances 1
-    minAllowedInstances 1
-    maxAllowedInstances 1
+config = new ConfigSlurper().parse(new File("cassandra.properties").toURL())
+serviceContext = ServiceContextFactory.getServiceContext()
+home = "${serviceContext.serviceDirectory}/${config.unzipFolder}"
+script = "${home}/bin/cassandra-cli"
 
-    compute {
-        template "SMALL_UBUNTU"
-    }
+new AntBuilder().sequential {
+	exec(executable:script, osfamily:"unix") {
+		arg value:"-host"
+		arg value:"localhost"
+		arg value:"-port"
+		arg value:"9160"
+		arg value:"-f"
+		arg value:"cassandraSchema.txt"
+	}
+	exec(executable:"${script}.bat", osfamily:"windows") {
+		arg value:"-host"
+		arg value:"localhost"
+		arg value:"-port"
+		arg value:"9160"
+		arg value:"-f"
+		arg value:"cassandraSchema.txt"
+	}
+	echo(message:"created cassandra schema")
 }
