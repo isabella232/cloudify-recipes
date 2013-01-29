@@ -28,6 +28,6 @@ fi
 #Enter a loop to avoid proceeding to the next step until the user finished debugging
 :>$HOME/debugging
 while [[ -f $HOME/debugging ]]; do
-    print "The script $1 is waiting to be debugged. When finished, delete the file $HOME/debugging"
+    echo "The script $1 is waiting to be debugged. When finished, delete the file $HOME/debugging"
     sleep 60
 done
