@@ -14,11 +14,13 @@
 * limitations under the License.
 *******************************************************************************/
 
-//TODO: put these debug definitions manually in a jcommon ar file (or something similar)
-def debug_hook(List args) { return ['debug-hook.sh'] + args }
-def debug_hook(String arg) { return debug_hook([arg]) }
-def debug_hook(GString arg) { return debug_hook([arg.toString()]) }
-def debug_hook(Map args) { return args.inject([:]) {h, k ,v -> h[k] = debug_hook(v); h }}
+//TODO: put these debug definitions manually in a common jar file (or something similar)
+
+//TODO!!: add flag to enable first trial run of the script, before/instead of entering debug
+def debug_hook(List    args) { return ['debug-hook.sh'] + args }
+def debug_hook(String  arg ) { return debug_hook([arg]) }
+def debug_hook(GString arg ) { return debug_hook([arg.toString()]) }
+def debug_hook(Map     args) { return args.inject([:]) {h, k ,v -> h[k] = debug_hook(v); h }}
 
 service {
     extend "../../../services/debug"
