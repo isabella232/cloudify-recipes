@@ -14,7 +14,6 @@ def debug(args) {
     cli._(longOpt:'run-script', 'Run the current script')
     cli._(longOpt:'run-groovy', 'Run a groovy command in this context')
     cli._(longOpt:'launch-groovysh', 'Launch a groovy shell with this context')
-    cli._(longOpt:'exit', 'Exit debugging shell (with option of returning)')
     cli._(longOpt:'finish', 'Finish debugging (move to next lifecycle event)')
     def options = cli.parse(args)
 
