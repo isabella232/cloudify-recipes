@@ -7,6 +7,7 @@ export CLOUDIFY_WORKDIR="$HOME/gigaspaces/work/processing-units/${USM_APPLICATIO
 function write_script () {
     echo >>$HOME/debugrc "$@"
 }
+write_script "# Generated on `date` by debug-hook.sh for host `hostname`, part of Cloudify debug subsystem"
 write_script 'echo "Loading the debug environment..."'
 write_script '#the cloudify environment variables for this event:'
 printenv | grep -E "^(CLOUDIFY|USM|LOOKUP)" | while read var; do write_script export $var; done
