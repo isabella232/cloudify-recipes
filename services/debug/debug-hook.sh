@@ -14,7 +14,7 @@ printenv | grep -E "^(CLOUDIFY|USM|LOOKUP)" | while read var; do write_script ex
 write_script ''
 write_script "cd $CLOUDIFY_WORKDIR"
 write_script 'export JAVA_HOME=$HOME/java'
-write_script 'export CLASSPATH=`find $HOME/gigaspaces -name *.jar | paste -sd:`'
+write_script 'export CLASSPATH=`find $HOME/gigaspaces/lib/{required,platform/cloudify} -name *.jar | paste -sd:`'
 write_script 'export PATH=$HOME/gigaspaces/tools/groovy/bin:$PATH'
 
 write_script "chmod +x debug.groovy"
@@ -22,7 +22,7 @@ write_script "chmod +x $SCRIPT_NAME"
 write_script "PS1='Debugging[$SCRIPT_NAME]: '"
 
 #set up shortcut aliases
-write_script '[[ -f debug_commands ]] || ./debug.groovy | tail -n+2 >debug_commands'
+write_script '[[ -f debug_commands ]] || (./debug.groovy | tail -n+2 >debug_commands)'
 write_script 'for COMMAND in `grep -Eo "\-\-[^ ]*" debug_commands | cut -c3- `; do
                   alias $COMMAND="$CLOUDIFY_WORKDIR/debug.groovy --$COMMAND" 
               done'
