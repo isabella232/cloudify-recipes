@@ -2,10 +2,12 @@
 echo "Loading the debug environment..."
 
 #the cloudify environment variables for this event:
-<% System.getenv().grep{it =~ /^(CLOUDIFY|USM|LOOKUP)/}.each {println("export ${it.key}")} %>
+<% System.getenv().grep{it =~ /^(CLOUDIFY|USM|LOOKUP)/}.each{
+    println("export ${it.key}='${it.value}'")
+} %>
 
-export CLOUDIFY_WORKDIR=${cloudifyWorkdir}
-export SCRIPT_NAME=${scriptName}
+export CLOUDIFY_WORKDIR=$HOME/gigaspaces/work/processing-units/${USM_APPLICATION_NAME}_${USM_SERVICE_NAME}_${USM_INSTANCE_ID}/ext
+export DEBUG_TARGET=${debugTarget}
 export KEEPALIVE_FILE=${keepaliveFile}
 
 cd $CLOUDIFY_WORKDIR
@@ -13,11 +15,20 @@ export JAVA_HOME=$HOME/java
 export CLASSPATH=`find $HOME/gigaspaces/lib/{required,platform/cloudify} -name *.jar | paste -sd:`
 export PATH=$HOME/gigaspaces/tools/groovy/bin:$PATH
 chmod +x debug.groovy
-chmod +x $SCRIPT_NAME
 
+#the bash command aliases:
+<% bashCommands.each{
+    println("alias ${it.name}='${it.command}'")
+} %>
 
 #set up shortcut aliases
-[[ -f debug_commands ]] || (./debug.groovy | tail -n+2 >debug_commands)
+if [[ ! -f debug_commands ]] ; then
+    (./debug.groovy | tail -n+2 >debug_commands)
+    <% bashCommands.each{
+        println("echo \"       ${it.name} ${it.comment}\" >debug_commands")
+    } %>
+fi
+
 for COMMAND in `grep -Eo "\-\-[^ ]*" debug_commands | cut -c3- `; do
     alias $COMMAND="$CLOUDIFY_WORKDIR/debug.groovy --$COMMAND"
 done
@@ -25,9 +36,9 @@ done
 alias help="cut -c7- <$CLOUDIFY_WORKDIR/debug_commands"
 
 clear
-PS1='Debugging[$SCRIPT_NAME]: '
+PS1='Debugging[$DEBUG_TARGET]: '
 echo -n "Starting a debugging session"
-echo ": for hook $SCRIPT_NAME"
+echo ": for hook $DEBUG_TARGET"
 echo "These are the available debug commands:"
 help #use our newly created alias
 echo

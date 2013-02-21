@@ -36,7 +36,8 @@ def debug(args) {
     }
 
     if (options.'script-info') {
-
+        //TODO: print the cloudify properties file's variables (from binding?)
+        //and all other relevant variables - do toString on everything
         return
     }
 
