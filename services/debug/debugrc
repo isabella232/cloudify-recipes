@@ -6,14 +6,14 @@ echo "Loading the debug environment..."
     println("export ${it.key}='${it.value}'")
 } %>
 
-export CLOUDIFY_WORKDIR=$HOME/gigaspaces/work/processing-units/${USM_APPLICATION_NAME}_${USM_SERVICE_NAME}_${USM_INSTANCE_ID}/ext
+export CLOUDIFY_WORKDIR=\$HOME/gigaspaces/work/processing-units/\${USM_APPLICATION_NAME}_\${USM_SERVICE_NAME}_\${USM_INSTANCE_ID}/ext
 export DEBUG_TARGET=${debugTarget}
 export KEEPALIVE_FILE=${keepaliveFile}
 
-cd $CLOUDIFY_WORKDIR
-export JAVA_HOME=$HOME/java
-export CLASSPATH=`find $HOME/gigaspaces/lib/{required,platform/cloudify} -name *.jar | paste -sd:`
-export PATH=$HOME/gigaspaces/tools/groovy/bin:$PATH
+cd \$CLOUDIFY_WORKDIR
+export JAVA_HOME=\$HOME/java
+export CLASSPATH=`find \$HOME/gigaspaces/lib/{required,platform/cloudify} -name *.jar | paste -sd:`
+export PATH=\$HOME/gigaspaces/tools/groovy/bin:\$PATH
 chmod +x debug.groovy
 
 #the bash command aliases:
@@ -29,16 +29,16 @@ if [[ ! -f debug_commands ]] ; then
     } %>
 fi
 
-for COMMAND in `grep -Eo "\-\-[^ ]*" debug_commands | cut -c3- `; do
-    alias $COMMAND="$CLOUDIFY_WORKDIR/debug.groovy --$COMMAND"
+for COMMAND in `grep -Eo '\\-\\-[^ ]*' debug_commands | cut -c3- `; do
+    alias \$COMMAND="\$CLOUDIFY_WORKDIR/debug.groovy --\$COMMAND"
 done
 #some special treatment for the help alias
-alias help="cut -c7- <$CLOUDIFY_WORKDIR/debug_commands"
+alias help="cut -c7- <\$CLOUDIFY_WORKDIR/debug_commands"
 
 clear
-PS1='Debugging[$DEBUG_TARGET]: '
+PS1='Debugging[\$DEBUG_TARGET]: '
 echo -n "Starting a debugging session"
-echo ": for hook $DEBUG_TARGET"
+echo ": for hook \$DEBUG_TARGET"
 echo "These are the available debug commands:"
 help #use our newly created alias
 echo

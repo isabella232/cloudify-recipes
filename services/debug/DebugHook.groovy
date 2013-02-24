@@ -14,28 +14,50 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 *******************************************************************************/
+//TODO: wrap the below in a nice class hierarchy before compiling
+
 import org.cloudifysource.dsl.context.ServiceContextFactory
 import org.cloudifysource.dsl.context.ServiceContext
 
-//TODO: wrap the below in a nice class hierarchy before compiling
 class DebugHook {
-    String keepaliveFilename = '$HOME/.cloudify_debugging'
+    ServiceContext ctx = null
+    String keepaliveFilename = "/tmp/x"
+    DebugHook(options=[:]) {
+        println("A1")
 
-    def static debug_hook(String  arg , mode="instead") { return debug_hook([arg], mode) }
-    def static debug_hook(GString arg , mode="instead") { return debug_hook([arg.toString()], mode) }
-    def static debug_hook(Map     args, mode="instead") { //TODO: this is unsupported yet
+        if ("context" in options) {
+            ctx = options["context"]
+        }
+        else {
+            ctx = ServiceContextFactory.getServiceContext()
+        }
+        println(ctx)
+        // keepaliveFilename = "${ctx.getServiceDirectory()}/.cloudify_debugging"
+    }
+
+    def debug_hook(String  arg , mode="instead") { return debug_hook([arg], mode) }
+    def debug_hook(GString arg , mode="instead") { return debug_hook([arg.toString()], mode) }
+    def debug_hook(Map     args, mode="instead") { //TODO: this is unsupported yet
         return args.inject([:]) {h, k ,v -> h[k] = debug_hook(v, mode); h }
     }
 
     //The main hook function
-    def static debug_hook(List args, mode="instead") { 
-        String keepaliveFilename = '$HOME/.cloudify_debugging' //TODO: remove duplication
+    def debug_hook(List args, mode="instead") { 
         prepare_debug_env(args.join(" "))
     
-        File keepalive = new File(keepaliveFilename).createNewFile()
+        File keepalive = new File(keepaliveFilename)
+        keepalive.createNewFile()
+
         FileWriter fileWriter = new FileWriter(keepalive, true)
         fileWriter.write(
-    """while [[ -f \$0 ]]; do
+    """
+    #set up the 'debug' alias to enter the debug shell
+    if ! alias debug &>/dev/null ; then
+        echo >>\$HOME/.bashrc 'echo A cloudify debug shell is available for you by typing \"debug\"';
+        echo >>\$HOME/.bashrc 'alias debug=\"bash --rcfile \$HOME/debugrc\"';
+    fi
+    
+    while [[ -f \$0 ]]; do
         echo A debug environment is ready on \$CLOUDIFY_AGENT_ENV_PUBLIC_IP.
         echo When finished, delete the file \$0 (or use the \'finish\' debug command)
         sleep 60)
@@ -43,12 +65,10 @@ class DebugHook {
     """)
         fileWriter.flush()
         fileWriter.close()
-        return [keepaliveFilename] + args
+        return keepaliveFilename
     }
 
-    def static prepare_debug_env(debugTarget) {        
-        ServiceContext context = ServiceContextFactory.getServiceContext()
-        String keepaliveFilename = '$HOME/.cloudify_debugging' //TODO: remove duplication
+    def prepare_debug_env(debugTarget) {        
         def bash_commands = [
             [name:"run-script", comment:"Run the current script",
                 command:'$CLOUDIFY_WORKDIR/$DEBUG_TARGET'],
@@ -62,7 +82,7 @@ class DebugHook {
 
         def templateEngine = new groovy.text.SimpleTemplateEngine()
 
-        def debugTemplate = new File(context.getServiceDirectory(),"debugrc").getText()
+        def debugTemplate = new File(ctx.getServiceDirectory(),"debugrc").getText()
     
         def preparedTemplate = templateEngine.createTemplate(debugTemplate).make(
             [debugTarget: debugTarget,
@@ -72,16 +92,16 @@ class DebugHook {
         def targetDebugrc = new File(System.properties["user.home"] +"/.debugrc")
         targetDebugrc.withWriter() {it.write(preparedTemplate)}
 
-        //set up the "debug" alias to enter the debug shell
-        def bashrc = new File(System.properties["user.home"] +"/.bashrc")
-        if (! bashrc.getText() =~ /alias debug/) {
-            FileWriter fileWriter = new FileWriter(bashrc, true)
-            fileWriter.write(
-    """echo 'A cloudify debug shell is available for you by typing "debug"'
-    alias debug="bash --rcfile \$HOME/debugrc"
-    """)
-            fileWriter.flush()
-            fileWriter.close()
-        }
+//        //set up the "debug" alias to enter the debug shell
+//        def bashrc = new File(System.properties["user.home"] +"/.bashrc")
+//        if (! bashrc.getText() =~ /alias debug/) {
+//            FileWriter fileWriter = new FileWriter(bashrc, true)
+//            fileWriter.write(
+//    """echo 'A cloudify debug shell is available for you by typing "debug"'
+//    alias debug="bash --rcfile \$HOME/debugrc"
+//    """)
+//            fileWriter.flush()
+//            fileWriter.close()
+//        }
     }
 }

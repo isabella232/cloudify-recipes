@@ -1,0 +1,133 @@
+
+    #set up the "debug" alias to enter the debug shell
+    if ! alias debug &>/dev/null ; then
+        echo >>$HOME/.bashrc 'echo "A cloudify debug shell is available for you by typing "debug""';
+        echo >>$HOME/.bashrc 'alias debug="bash --rcfile $HOME/debugrc"';
+    fi
+    
+    while [[ -f $0 ]]; do
+        echo A debug environment is ready on $CLOUDIFY_AGENT_ENV_PUBLIC_IP.
+        echo When finished, delete the file $0 (or use the 'finish' debug command)
+        sleep 60)
+    done
+    
+    #set up the 'debug' alias to enter the debug shell
+    if ! alias debug &>/dev/null ; then
+        echo >>$HOME/.bashrc 'echo A cloudify debug shell is available for you by typing "debug"';
+        echo >>$HOME/.bashrc 'alias debug="bash --rcfile $HOME/debugrc"';
+    fi
+    
+    while [[ -f $0 ]]; do
+        echo A debug environment is ready on $CLOUDIFY_AGENT_ENV_PUBLIC_IP.
+        echo When finished, delete the file $0 (or use the 'finish' debug command)
+        sleep 60)
+    done
+    
+    #set up the 'debug' alias to enter the debug shell
+    if ! alias debug &>/dev/null ; then
+        echo >>$HOME/.bashrc 'echo A cloudify debug shell is available for you by typing "debug"';
+        echo >>$HOME/.bashrc 'alias debug="bash --rcfile $HOME/debugrc"';
+    fi
+    
+    while [[ -f $0 ]]; do
+        echo A debug environment is ready on $CLOUDIFY_AGENT_ENV_PUBLIC_IP.
+        echo When finished, delete the file $0 (or use the 'finish' debug command)
+        sleep 60)
+    done
+    
+    #set up the 'debug' alias to enter the debug shell
+    if ! alias debug &>/dev/null ; then
+        echo >>$HOME/.bashrc 'echo A cloudify debug shell is available for you by typing "debug"';
+        echo >>$HOME/.bashrc 'alias debug="bash --rcfile $HOME/debugrc"';
+    fi
+    
+    while [[ -f $0 ]]; do
+        echo A debug environment is ready on $CLOUDIFY_AGENT_ENV_PUBLIC_IP.
+        echo When finished, delete the file $0 (or use the 'finish' debug command)
+        sleep 60)
+    done
+    
+    #set up the 'debug' alias to enter the debug shell
+    if ! alias debug &>/dev/null ; then
+        echo >>$HOME/.bashrc 'echo A cloudify debug shell is available for you by typing "debug"';
+        echo >>$HOME/.bashrc 'alias debug="bash --rcfile $HOME/debugrc"';
+    fi
+    
+    while [[ -f $0 ]]; do
+        echo A debug environment is ready on $CLOUDIFY_AGENT_ENV_PUBLIC_IP.
+        echo When finished, delete the file $0 (or use the 'finish' debug command)
+        sleep 60)
+    done
+    
+    #set up the 'debug' alias to enter the debug shell
+    if ! alias debug &>/dev/null ; then
+        echo >>$HOME/.bashrc 'echo A cloudify debug shell is available for you by typing "debug"';
+        echo >>$HOME/.bashrc 'alias debug="bash --rcfile $HOME/debugrc"';
+    fi
+    
+    while [[ -f $0 ]]; do
+        echo A debug environment is ready on $CLOUDIFY_AGENT_ENV_PUBLIC_IP.
+        echo When finished, delete the file $0 (or use the 'finish' debug command)
+        sleep 60)
+    done
+    
+    #set up the 'debug' alias to enter the debug shell
+    if ! alias debug &>/dev/null ; then
+        echo >>$HOME/.bashrc 'echo A cloudify debug shell is available for you by typing "debug"';
+        echo >>$HOME/.bashrc 'alias debug="bash --rcfile $HOME/debugrc"';
+    fi
+    
+    while [[ -f $0 ]]; do
+        echo A debug environment is ready on $CLOUDIFY_AGENT_ENV_PUBLIC_IP.
+        echo When finished, delete the file $0 (or use the 'finish' debug command)
+        sleep 60)
+    done
+    
+    #set up the 'debug' alias to enter the debug shell
+    if ! alias debug &>/dev/null ; then
+        echo >>$HOME/.bashrc 'echo A cloudify debug shell is available for you by typing "debug"';
+        echo >>$HOME/.bashrc 'alias debug="bash --rcfile $HOME/debugrc"';
+    fi
+    
+    while [[ -f $0 ]]; do
+        echo A debug environment is ready on $CLOUDIFY_AGENT_ENV_PUBLIC_IP.
+        echo When finished, delete the file $0 (or use the 'finish' debug command)
+        sleep 60)
+    done
+    
+    #set up the 'debug' alias to enter the debug shell
+    if ! alias debug &>/dev/null ; then
+        echo >>$HOME/.bashrc 'echo A cloudify debug shell is available for you by typing "debug"';
+        echo >>$HOME/.bashrc 'alias debug="bash --rcfile $HOME/debugrc"';
+    fi
+    
+    while [[ -f $0 ]]; do
+        echo A debug environment is ready on $CLOUDIFY_AGENT_ENV_PUBLIC_IP.
+        echo When finished, delete the file $0 (or use the 'finish' debug command)
+        sleep 60)
+    done
+    
+    #set up the 'debug' alias to enter the debug shell
+    if ! alias debug &>/dev/null ; then
+        echo >>$HOME/.bashrc 'echo A cloudify debug shell is available for you by typing "debug"';
+        echo >>$HOME/.bashrc 'alias debug="bash --rcfile $HOME/debugrc"';
+    fi
+    
+    while [[ -f $0 ]]; do
+        echo A debug environment is ready on $CLOUDIFY_AGENT_ENV_PUBLIC_IP.
+        echo When finished, delete the file $0 (or use the 'finish' debug command)
+        sleep 60)
+    done
+    
+    #set up the 'debug' alias to enter the debug shell
+    if ! alias debug &>/dev/null ; then
+        echo >>$HOME/.bashrc 'echo A cloudify debug shell is available for you by typing "debug"';
+        echo >>$HOME/.bashrc 'alias debug="bash --rcfile $HOME/debugrc"';
+    fi
+    
+    while [[ -f $0 ]]; do
+        echo A debug environment is ready on $CLOUDIFY_AGENT_ENV_PUBLIC_IP.
+        echo When finished, delete the file $0 (or use the 'finish' debug command)
+        sleep 60)
+    done
+    

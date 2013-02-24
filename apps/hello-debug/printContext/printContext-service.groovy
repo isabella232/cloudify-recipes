@@ -18,9 +18,6 @@
 //import static org.cloudifysource.Debug.*
 import DebugHook
 
-import org.cloudifysource.dsl.context.ServiceContextFactory
-import org.cloudifysource.dsl.context.ServiceContext
-
 //these are different entry points for creating a debug environment around a lifecycle script
 
 
@@ -40,6 +37,8 @@ service {
     }
 
     lifecycle{
-        install DebugHook.debug_hook("printContext.groovy")
+        println("A0")
+        // install (new DebugHook(context: context).debug_hook("printContext.groovy"))
+
     }
 }
