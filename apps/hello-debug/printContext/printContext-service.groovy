@@ -37,8 +37,6 @@ service {
     }
 
     lifecycle{
-        println("A0")
-        // install (new DebugHook(context: context).debug_hook("printContext.groovy"))
-
+        install (new DebugHook().debug_hook("printContext.groovy"))
     }
 }
