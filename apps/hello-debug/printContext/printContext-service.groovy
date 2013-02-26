@@ -18,15 +18,6 @@
 //import static org.cloudifysource.Debug.*
 import DebugHook
 
-//these are different entry points for creating a debug environment around a lifecycle script
-
-
-//TODO!!: add flag to enable first trial run of the script, before/instead of entering debug
-//def debug_hook(List    args) { return ['debug-hook.sh'] + args }
-//def debug_hook(String  arg ) { return debug_hook([arg]) }
-//def debug_hook(GString arg ) { return debug_hook([arg.toString()]) }
-//def debug_hook(Map     args) { return args.inject([:]) {h, k ,v -> h[k] = debug_hook(v); h }}
-
 service {
     extend "../../../services/debug"
     name "printContext"
