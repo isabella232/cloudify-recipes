@@ -39,8 +39,7 @@ def debug(args) {
     ServiceContext context = ServiceContextFactory.getServiceContext()
 
     if (options.'print-context') {
-        println(context.toString())
-        //TODO: print all the properties in the context
+        context.getProperties().each {println it}
         return
     }
 
@@ -67,8 +66,7 @@ def debug(args) {
     }
 
     if (options.'script-info') {
-        //TODO: print the cloudify properties file's variables (from binding?)
-        //and all other relevant variables - do toString on everything
+        binding.variables.each{ println "${it.key.toString()}=${it.value.toString()}" }
         return
     }
 
