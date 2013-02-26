@@ -23,10 +23,10 @@ import org.cloudifysource.dsl.context.ServiceContextFactory
 import org.cloudifysource.dsl.context.ServiceContext
 
 def debug(args) {
-    def cli = new CliBuilder(usage: "${this.class.name}.groovy OPTION")
-    cli._(longOpt:'help', 'Show usage information')
+    def cli = new CliBuilder(usage: "${this.class.name}.groovy OPTION", width:80)
+    cli._(longOpt:'help', 'Show this usage information')
     cli._(longOpt:'print-context', 'Print the cloudify context for this instance')
-    cli._(longOpt:'list-attributes', args:1, argName:'scope', 'Output cloudify attributes (global/application/service/instance)')
+    cli._(longOpt:'list-attributes', args:1, argName:'scope', 'Output cloudify attributes [global/application/service/instance]')
     cli._(longOpt:'script-info', 'Output the variables and properties for the current script')
     cli._(longOpt:'run-groovy', args:1, argName:'command', 'Run a groovy command with this context')
     def options = cli.parse(args)
@@ -45,8 +45,24 @@ def debug(args) {
     }
 
     if (options.'list-attributes') {
-        //for (attr in context.attributes.thisInstance) {println attr}
-        for (attr in context.attributes.global) {println attr}
+        switch (options.'list-attributes') {
+            case "global":
+                attrs = context.attributes.global
+                break
+            case "application":
+                attrs = context.attributes.thisApplication
+                break
+            case "service":
+                attrs = context.attributes.thisService
+                break
+            case "instance":
+                attrs = context.attributes.thisInstance
+                break
+            default:
+                throw new Exception("Unrecognized scope(${options.'list-attributes'}), please use one of: 'global', 'application', 'service' or 'instance'")
+                break
+            }
+        for (attr in attrs) {println attr}
         return
     }
 
