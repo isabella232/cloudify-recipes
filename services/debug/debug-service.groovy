@@ -22,6 +22,5 @@ service {
     }
 
     lifecycle{
-        preInstall "preInstall-debug.sh" //upload an ssh key
     }
 }

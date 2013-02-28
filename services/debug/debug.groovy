@@ -28,7 +28,6 @@ def debug(args) {
     cli._(longOpt:'help', 'Show this usage information')
     cli._(longOpt:'print-context', 'Print the cloudify context for this instance')
     cli._(longOpt:'list-attributes', args:1, argName:'scope', 'Output cloudify attributes [global/application/service/instance]')
-    cli._(longOpt:'script-info', 'Output the variables and properties for the current script')
     cli._(longOpt:'run-groovy', args:1, argName:'command', 'Run a groovy command with this context')
     def options = cli.parse(args)
 
@@ -39,10 +38,11 @@ def debug(args) {
 
     //load the context with a bit less verbosity
     def realOut = System.out
-    System.out = new PrintStream(new ByteArrayOutputStream())
+    System.out = new PrintStream(new FileOutputStream("/dev/null"))
     ServiceContext context = ServiceContextFactory.getServiceContext()
     System.out = realOut
 
+    //below is the code actually dealing with the debug commands
 
     if (options.'print-context') {
         context.getProperties().each{println it}
@@ -79,12 +79,6 @@ def debug(args) {
 
          def resultJson = new URL("http://${managementIp}:8100/${requestUrl}").text
          new JsonSlurper().parseText(resultJson).each{println it}
-    }
-
-    if (options.'script-info') {
-        //TODO: should I serialize the binding from before?
-        binding.variables.each{ println "${it.key.toString()}=${it.value.toString()}" }
-        return
     }
 
     if (options.'run-groovy') {

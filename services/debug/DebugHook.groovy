@@ -19,42 +19,57 @@
 import groovy.util.logging.*
 
 class DebugHook {
-    def eventLogger = java.util.logging.Logger.getLogger("org.cloudifysource.usm.USMEventLogger.USM")
+    def eventLogger
+    def context
+    DebugHook(options=[:]) {
+        context = options["context"] ?: null
 
+        //Use the service's logger, if possible
+        def loggerName = ""
+        if (context) {loggerName = "org.cloudifysource.usm.USMEventLogger.${context.getApplicationName()}.${context.getServiceName()}"}
+        eventLogger = java.util.logging.Logger.getLogger(loggerName)
+    }
+
+    def groovyDebugParams = "-DXdebug -DXrunjdwp:transport=dt_socket,address=10000,server=y,suspend=n"
+
+    //These are the debug commands that can ran from bash,
+    //as opposed to those available from the debug groovy class
     def bashCommands = [
             [name:"run-script", comment:"Run the current script",
                 command:'$CLOUDIFY_WORKDIR/$DEBUG_TARGET'],
             [name:"edit-script", comment:"Edit the current script",
                 command:'vim $CLOUDIFY_WORKDIR/$DEBUG_TARGET'],
             [name:"launch-groovysh", comment:"Launch a groovy shell",
-                command:'$HOME/gigaspaces/tools/groovy/bin/groovysh -q'],
+                command:"\$HOME/gigaspaces/tools/groovy/bin/groovysh -q ${groovyDebugParams}"],
             [name:"finish", comment:"Finish debugging (move on to the next lifecycle event)",
-                command:'rm $KEEPALIVE_FILE'],
+                command:'rm $KEEPALIVE_FILE && echo "Debug step finished"'],
         ]
 
+    //The contents of bash files that will be created for the debug environment:
     def preparationScript = ("""\
-logger -i \"Cloudify Debug: beginning run as `whoami` \"
-logger -i \"Cloudify Debug: with full id of `id` \"
+#! /bin/bash
 
 #preserve the env variables
-:>\$HOME/.cloudify_env
+touch \$HOME/.cloudify_env
 printenv | grep -E \"^(CLOUDIFY|USM|LOOKUP)\" | \
     while read var; do echo >>\$HOME/.cloudify_env \"export \$var\"; done
+
+#import extra ssh public key(s) for the debugging connection
+CLOUDIFY_WORKDIR=\$HOME/gigaspaces/work/processing-units/\${USM_APPLICATION_NAME}_\${USM_SERVICE_NAME}_\${USM_INSTANCE_ID}/ext
+cd \$CLOUDIFY_WORKDIR
+if [[ -f ./debugPublicKey ]] && \
+   grep -vxF -f \$HOME/.ssh/authorized_keys ./debugPublicKey #there's at least one added line
+then
+    logger -it \"CloudifyDebug\"  \"Adding public key from \$CLOUDIFY_WORKDIR/debugPublicKey \"
+    cat ./debugPublicKey >>\$HOME/.ssh/authorized_keys
+fi
 
 #chmod the actual debug target script
 chmod +x \$1
 
-#TODO: fix this
-#import extra ssh public key(s) for the debugging connection
-CLOUDIFY_WORKDIR=\$HOME/gigaspaces/work/processing-units/\${USM_APPLICATION_NAME}_\${USM_SERVICE_NAME}_\${USM_INSTANCE_ID}/ext
-logger -i \"Cloudify Debug: Looking for a public key in \$CLOUDIFY_WORKDIR/debugPublicKey \"
-if [[ -f \$CLOUDIFY_WORKDIR/debugPublicKey ]]; then
-logger -i \"Cloudify Debug: Adding public key from \$CLOUDIFY_WORKDIR/debugPublicKey \"
-    cat \$CLOUDIFY_WORKDIR/debugPublicKey >>\$HOME/.ssh/authorized_keys
-fi
-
 #set up the 'debug' alias to enter the debug shell
-if ! alias debug &>/dev/null ; then
+if ! grep 'debugrc' \$HOME/.bashrc &>/dev/null
+then
     echo >>\$HOME/.bashrc 'echo A cloudify debug shell is available for you by typing \\\"debug\\\"'
     echo >>\$HOME/.bashrc 'alias debug=\"bash --rcfile \$HOME/.debugrc\"'
 fi
@@ -63,17 +78,16 @@ fi
 
     String keepaliveFilename = "${System.properties["user.home"]}/.cloudify_debugging"
     
-    //TODO: fix the loop
     def waitForFinishLoop = ("""\
-#KEEPALIVE_FILE=${keepaliveFilename}
-KEEPALIVE_FILE=/home/ubuntu/.cloudify_debugging
-logger -i \"Cloudify Debug: Awaiting deletion of ${keepaliveFilename}\"
-:>\$KEEPALIVE_FILE
-while [[ -f \$KEEPALIVE_FILE ]]; do
+touch ${keepaliveFilename}
+logger -it \"CloudifyDebug\" \"Beginning debug loop of \$1, until deletion of ${keepaliveFilename}\"
+while [[ -f ${keepaliveFilename} ]]; do
     echo \"The service \$USM_SERVICE_NAME (script \$1) is waiting to be debugged on \$CLOUDIFY_AGENT_ENV_PUBLIC_IP.\"
     echo \"When finished, delete the file \$KEEPALIVE_FILE (or use the 'finish' debug command)\"
+    logger -it \"CloudifyDebug\" \"Still debugging \$1\"
     sleep 60
 done
+logger -it \"CloudifyDebug\" \"${keepaliveFilename} was deleted - debug of \$1 finished\"
 """)
 
     def debugrcTemplate = ('''\
@@ -100,7 +114,7 @@ chmod +x debug.groovy
 
 #set up shortcut aliases
 if [[ ! -f debug_commands ]] ; then
-    (./debug.groovy | tail -n+2 >debug_commands)
+    (groovy ${groovyDebugParams} debug.groovy | tail -n+2 >debug_commands)
 <% bashCommands.each{
     println(sprintf("echo >>debug_commands \'      %-26s%s\' ; ", it.name, it.comment))
 } %>
@@ -122,11 +136,14 @@ help
 echo
 ''')
 
-
+    //Variants of the debug hook accessible from script dsl
     def debug(String  arg , mode="instead") { return debug([arg], mode) }
     def debug(GString arg , mode="instead") { return debug([arg.toString()], mode) }
 
-    //The main hook function
+    //The main hook function, mode is one of:
+    // #instead - just create debug environment instead of running the target script
+    // #after - run the target script and then let me debug the outcome state 
+    // #instead - like 'after', but only stop for debugging if the script fails
     def debug(List args, mode="instead") {
         prepare_debugrc(args.join(" "))
 
@@ -136,10 +153,10 @@ echo
                 debugScriptContents += waitForFinishLoop
                 break
             case "after":
-                debugScriptContents += '$@ \n' + waitForFinishLoop
+                debugScriptContents += './$@ \n' + waitForFinishLoop
                 break
             case "onError":
-                debugScriptContents += '$@ && exit 0 \n' + waitForFinishLoop
+                debugScriptContents += './$@ && exit 0 \n' + waitForFinishLoop
                 break
             default:
                 throw new Exception("Unrecognized debug mode (${mode}), please use one of: 'instead', 'after' or 'onError'")
@@ -149,7 +166,7 @@ echo
         def debughookScriptName = System.properties["user.home"] +"/debug-hook.sh"
         new File(debughookScriptName).withWriter() {it.write(debugScriptContents)}
 
-        eventLogger.info "IMPORTANT: A debug environment will be waiting for you after the instance has launched"
+        eventLogger.info "IMPORTANT: A debug environment will be waiting for you on ${context.getPublicAddress()} after the instance has launched"
         return [debughookScriptName] + args
     }
 
@@ -159,6 +176,7 @@ echo
             [debugTarget: debugTarget,
              keepaliveFile: keepaliveFilename,
              bashCommands: bashCommands,
+             groovyDebugParams: groovyDebugParams,
         ])
         def targetDebugrc = new File(System.properties["user.home"] +"/.debugrc")
         targetDebugrc.withWriter() {it.write(preparedTemplate)}
