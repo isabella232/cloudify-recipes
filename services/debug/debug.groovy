@@ -19,6 +19,7 @@
 //TODO: perhaps set up everything but the argparsing in a class hierarchy shared with the rest of the debug stuff
 
 import java.text.*
+import groovy.json.JsonSlurper
 import org.cloudifysource.dsl.context.ServiceContextFactory
 import org.cloudifysource.dsl.context.ServiceContext
 
@@ -36,36 +37,52 @@ def debug(args) {
         return
     }
 
+    //load the context with a bit less verbosity
+    def realOut = System.out
+    System.out = new PrintStream(new ByteArrayOutputStream())
     ServiceContext context = ServiceContextFactory.getServiceContext()
+    System.out = realOut
+
 
     if (options.'print-context') {
-        context.getProperties().each {println it}
+        context.getProperties().each{println it}
         return
     }
 
     if (options.'list-attributes') {
+        //We use the REST interface for this, since context attribute iteration is unimplemented
+
+        def managementIp = System.getenv("LOOKUPLOCATORS").split(":")[0]
+
+        def application = context.getApplicationName()
+        def service = context.getServiceName()
+        def instanceID = context.getInstanceId()
+
+        def requestUrl = "attributes/"
         switch (options.'list-attributes') {
             case "global":
-                attrs = context.attributes.global
+                requestUrl += "globals"
                 break
             case "application":
-                attrs = context.attributes.thisApplication
+                requestUrl += "applications/${application}"
                 break
             case "service":
-                attrs = context.attributes.thisService
+                requestUrl += "services/${application}/${service}"
                 break
             case "instance":
-                attrs = context.attributes.thisInstance
+                requestUrl += "instances/${application}/${service}/${instanceID}"
                 break
             default:
                 throw new Exception("Unrecognized scope(${options.'list-attributes'}), please use one of: 'global', 'application', 'service' or 'instance'")
                 break
             }
-        for (attr in attrs) {println attr}
-        return
+
+         def resultJson = new URL("http://${managementIp}:8100/${requestUrl}").text
+         new JsonSlurper().parseText(resultJson).each{println it}
     }
 
     if (options.'script-info') {
+        //TODO: should I serialize the binding from before?
         binding.variables.each{ println "${it.key.toString()}=${it.value.toString()}" }
         return
     }
