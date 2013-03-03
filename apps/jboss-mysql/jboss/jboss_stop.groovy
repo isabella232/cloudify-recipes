@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2012 GigaSpaces Technologies Ltd. All rights reserved
+* Copyright (c) 2011 GigaSpaces Technologies Ltd. All rights reserved
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -13,23 +13,21 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 *******************************************************************************/
-version = "7.1.0.Final"
-name = "jboss-as-${version}"
-zipName = "${name}.zip"
-installDir = System.properties["user.home"] + "/.cloudify/jboss"
-home = "${installDir}/${name}"
-downloadPath = "http://download.jboss.org/jbossas/7.1/jboss-as-${version}/${zipName}"                
+import org.cloudifysource.dsl.context.ServiceContextFactory
 
-jbossPort=8080
-jmxPort=9999
-standaloneXmlFile="${home}/standalone/configuration/standalone.xml"
+jbossConfig = new ConfigSlurper().parse(new File("jboss-service.properties").toURL())
+context = ServiceContextFactory.getServiceContext()
 
-applicationWarFolder = "${home}/standalone/deployments"
-applicationWarUrl = "http://dl.dropbox.com/u/58809323/helloworld.war"
+def currentIP = context.attributes.thisInstance["currentIP"]
+def portIncrement =  context.isLocalCloud() ? context.getInstanceId()-1 : 0		
+def currJmxPort = jbossConfig.jmxPort + portIncrement
 
-dbServiceName="NO_DB_REQUIRED"
 
-dbHostVarName="DB_SERVICE_IP"
-dbPortVarName="DB_SERVICE_PORT"
 
-useLoadBalancer=false
+script = "${jbossConfig.home}/bin/jboss-cli"
+new AntBuilder().sequential {
+	exec(executable:"${script}.sh", osfamily:"unix"){
+		arg value:"--connect"
+		arg value:"command=:shutdown"
+	}
+}
