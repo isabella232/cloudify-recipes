@@ -19,15 +19,22 @@
 import groovy.util.logging.*
 
 class DebugHook {
-    def eventLogger
     def context
-    DebugHook(options=[:]) {
-        context = options["context"] ?: null
+    def eventLogger
+    def debugMode
 
-        //Use the service's logger, if possible
-        def loggerName = ""
-        if (context) {loggerName = "org.cloudifysource.usm.USMEventLogger.${context.getApplicationName()}.${context.getServiceName()}"}
+    //mode is one of:
+    // #instead - just create debug environment instead of running the target script
+    // #after - run the target script and then let me debug the outcome state 
+    // #instead - like 'after', but only stop for debugging if the script fails
+    //A current limitation is that the mode for all hooks on the machine needs to be the same
+    //(since the preparation is performed before deployment)
+    DebugHook(serviceContext, mode="instead") {
+        context = serviceContext
+        def loggerName = "org.cloudifysource.usm.USMEventLogger.${context.getApplicationName()}.${context.getServiceName()}"
         eventLogger = java.util.logging.Logger.getLogger(loggerName)
+
+        debugMode = mode
     }
 
     def groovyDebugParams = "-DXdebug -DXrunjdwp:transport=dt_socket,address=10000,server=y,suspend=n"
@@ -137,18 +144,15 @@ echo
 ''')
 
     //Variants of the debug hook accessible from script dsl
-    def debug(String  arg , mode="instead") { return debug([arg], mode) }
-    def debug(GString arg , mode="instead") { return debug([arg.toString()], mode) }
+    def debug(String  arg) { return debug([arg]) }
+    def debug(GString arg) { return debug([arg.toString()],) }
 
-    //The main hook function, mode is one of:
-    // #instead - just create debug environment instead of running the target script
-    // #after - run the target script and then let me debug the outcome state 
-    // #instead - like 'after', but only stop for debugging if the script fails
-    def debug(List args, mode="instead") {
+    //The main hook function
+    def debug(List args) {
         prepare_debugrc(args.join(" "))
 
         def debugScriptContents = preparationScript
-        switch (mode) {
+        switch (debugMode) {
             case "instead":
                 debugScriptContents += waitForFinishLoop
                 break
@@ -159,7 +163,7 @@ echo
                 debugScriptContents += './$@ && exit 0 \n' + waitForFinishLoop
                 break
             default:
-                throw new Exception("Unrecognized debug mode (${mode}), please use one of: 'instead', 'after' or 'onError'")
+                throw new Exception("Unrecognized debug mode (${debugMode}), please use one of: 'instead', 'after' or 'onError'")
                 break
             }
 

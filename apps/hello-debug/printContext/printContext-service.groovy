@@ -28,12 +28,11 @@ service {
     }
 
     lifecycle{
-        preInstall (new DebugHook([context:context]).debug('sayHello.sh', "after"))
-        install (new DebugHook([context:context]).debug('printContext.groovy'))
+        preInstall (new DebugHook(context, "after").debug('sayHello.sh'))
+        install (new DebugHook(context, "after").debug('printContext.groovy'))
 
-//        postInstall (new DebugHook([context:context]).debug(["printContext.groovy", "--help"],
-//                                                       "onError"))
+//        postInstall (new DebugHook(context, "onError").debug(["printContext.groovy", "--help"]))
 //
-//        start (new DebugHook([context:context]).debug("printContext.groovy", "after"))
+//        start (new DebugHook(context, "after").debug("printContext.groovy",))
     }
 }
