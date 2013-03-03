@@ -7,7 +7,7 @@ Extending this service allows a developer to examine and debug the environment i
 
 When the wrapped service is run, the developer will be able to connect to the service server in the midst of deployment, inspect prerequisites, the environment variables and the cloudify context and then run the event handler manually.
 
-This is made possible via a tmux shell session that is started by the debug service during the preInstall phase and to which the debug hooks later connect.
+This is made possible via a bash rc file loaded with the environment details for the lifecycle event script.
 
 ## Example
 In a service recipe, one might use:
