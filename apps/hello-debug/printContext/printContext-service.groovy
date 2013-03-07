@@ -13,13 +13,12 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 *******************************************************************************/
+import org.cloudifysource.debug.DebugHook
 
-//TODO: put these debug definitions manually in a common jar file (or something similar)
-//import static org.cloudifysource.Debug.*
-import DebugHook
+def debugHook = new DebugHook(context, "onError")
 
 service {
-    extend "../../../services/debug"
+//    extend "../../../services/debug"
     name "printContext"
     type "APP_SERVER"
 
@@ -28,8 +27,9 @@ service {
     }
 
     lifecycle{
-        preInstall (new DebugHook(context, "after").debug('sayHello.sh'))
-        install (new DebugHook(context, "after").debug('printContext.groovy'))
+        preInstall debugHook.debug('sayHello.sh')
+        install debugHook.debug('printContext.groovy')
+//        install --debug 'printContext.groovy'
 
 //        postInstall (new DebugHook(context, "onError").debug(["printContext.groovy", "--help"]))
 //

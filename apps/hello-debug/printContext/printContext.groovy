@@ -14,3 +14,5 @@ println("\nBelow are the context properties for this instance:\n${context}")
 
 println()
 context.getProperties().each{println it}
+
+justAMadeUpCommandToCauseAnError

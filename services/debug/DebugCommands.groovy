@@ -14,16 +14,15 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 *******************************************************************************/
-//This script provides various commands to help debug cloudify recipes
-
-//TODO: perhaps set up everything but the argparsing in a class hierarchy shared with the rest of the debug stuff
+package org.cloudifysource.debug
 
 import java.text.*
 import groovy.json.JsonSlurper
 import org.cloudifysource.dsl.context.ServiceContextFactory
 import org.cloudifysource.dsl.context.ServiceContext
 
-//A class containing commands useful for debug of groovy scripts, accepting cli arguments
+//A class containing commands useful for debug of groovy scripts
+//it accepts cli arguments passed from a wrapper script
 class DebugCommands {
     def debug(args) {
         def cli = new CliBuilder(usage: "${this.class.name}.groovy OPTION", width:80)
@@ -91,4 +90,3 @@ class DebugCommands {
         }
     }
 }
-new DebugCommands().debug(args)
