@@ -85,7 +85,7 @@ fi
 
     def groovyDebugParams = '-Xmx512m -DXdebug -DXrunjdwp:transport=dt_socket,address=10000,server=y,suspend=n'
 
-    //These are the debug commands that can ran from bash,
+    //These are the debug commands that can run from bash,
     //as opposed to those available from the debug groovy class
     def bashCommands = [
             [name:"run-script", comment:"Run the current script",
@@ -95,7 +95,7 @@ fi
             [name:"launch-groovysh", comment:"Launch a groovy shell",
                 command:"\$HOME/gigaspaces/tools/groovy/bin/groovysh -q ${groovyDebugParams}"],
             [name:"finish", comment:"Finish debugging (move on to the next lifecycle event)",
-                command:'rm $KEEPALIVE_FILE && echo "Debug step finished"'],
+                command:'rm $KEEPALIVE_FILE && exec echo -e "Debug step finished\n"'],
         ]
 
 
