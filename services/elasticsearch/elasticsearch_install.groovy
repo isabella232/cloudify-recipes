@@ -14,7 +14,7 @@
 * limitations under the License.
 *******************************************************************************/
 import java.util.concurrent.TimeUnit;
-import org.cloudifysource.dsl.context.ServiceContextFactory
+import org.cloudifysource.utilitydomain.context.ServiceContextFactory
 
 context = ServiceContextFactory.getServiceContext()
 config = new ConfigSlurper().parse(new File("elasticsearch-service.properties").toURL())
@@ -63,7 +63,7 @@ if (elasticsearchInstances == null) {
 unicastsHosts =""	
 elasticsearchInstances.each {
 	unicastsHosts += it.hostAddress+","
-	println "elasticsearch_install.groovy: elasticsearch #"+it.instanceId + " adding " + it.hostAddress
+	println "elasticsearch_install.groovy: elasticsearch #"+it.getInstanceId() + " adding " + it.hostAddress
 }
 
 unicastsHostsLen=unicastsHosts.length()

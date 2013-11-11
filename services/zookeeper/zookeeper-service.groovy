@@ -23,6 +23,10 @@ service {
 	maxAllowedInstances 3       //currently only 1 instance supported
 	minAllowedInstances 1
 
+	compute {
+		template "SMALL_LINUX"
+	}
+
 	lifecycle{
 		install "zookeeper_install.groovy"
 		start "zookeeper_start.groovy"
