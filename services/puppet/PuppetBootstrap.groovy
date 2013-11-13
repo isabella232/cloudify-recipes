@@ -160,6 +160,8 @@ class PuppetBootstrap {
         "\"${expr}\""
     }
 
+    // Apply puppet classes. classes argument is a map of classes -> parameters
+    // classes must be available within modules in the modulepath
     def applyClasses(Map classes) {
         puppetExecute(
             classes.collect() { kls, params ->
@@ -169,12 +171,14 @@ class PuppetBootstrap {
         )
     }
 
-    def puppetExecute(puppetCode) {
+    // Execute arbitrary puppet code
+    def puppetExecute(String puppetCode) {
         File tmp_file = File.createTempFile("apply_manifest", ".pp")
         tmp_file.withWriter { it.write(puppetCode)}
         puppetApply(tmp_file)
     }
 
+    // Apply a puppet manifest
     def puppetApply(filepath) {
         sudo("puppet apply ${filepath}")
     }
