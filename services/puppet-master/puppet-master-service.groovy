@@ -8,7 +8,7 @@ service {
 
     lifecycle {
         start {
-            def privateIp = System.getenv()["CLOUDIFY_AGENT_ENV_PRIVATE_IP"]
+            privateIp = System.getenv()["CLOUDIFY_AGENT_ENV_PRIVATE_IP"]
             bootstrap = PuppetBootstrap.getBootstrap(context:context)
             bootstrap.loadManifest(puppetRepo.repoType, puppetRepo.repoUrl)
             bootstrap.applyClasses(puppetRepo.classes)
@@ -18,10 +18,11 @@ service {
         }
 		startDetectionTimeoutSecs 600
 		startDetection {
+            privateIp = System.getenv()["CLOUDIFY_AGENT_ENV_PRIVATE_IP"]
             // puppetmaster port
 			ServiceUtils.isPortOccupied(8140) && 
             // puppetdb
-            ServiceUtils.isPortOccupied(8081)
+            ServiceUtils.isPortOccupied(privateIp, 8081)
 		}
     }
     customCommands([ 
