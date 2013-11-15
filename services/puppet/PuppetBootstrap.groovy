@@ -69,18 +69,7 @@ class PuppetBootstrap {
     }
 
     def install(options) { 
-        def templatesDir = pathJoin(context.getServiceDirectory(),"templates")
-        def templateEngine = new groovy.text.SimpleTemplateEngine()
-        def puppetConfTemplate = new File(templatesDir, "puppet.conf").getText()
-        def puppetConf = templateEngine.createTemplate(puppetConfTemplate).make(
-                            [environment: puppetConfig.environment,
-                            server: puppetConfig.server,
-                            cloudify_module_path:pathJoin(local_repo_dir, "modules")]
-                        )
-        sudoWriteFile("/etc/puppet/puppet.conf", puppetConf.toString())
-
         sh("mkdir -p '${local_repo_dir}'")
-
         //import facter plugin
         sudo("mkdir -p ${local_custom_facts} ${cloudify_module_dir}")
         def custom_facts_dir = pathJoin(context.getServiceDirectory(),"custom_facts")
@@ -98,6 +87,19 @@ class PuppetBootstrap {
         def tmp_file = File.createTempFile("metadata", "json")
         tmp_file.withWriter() { it.write(JsonOutput.toJson(metadata)) }
         sudo("mv '${tmp_file}' '${metadata_file}'")
+        configure()
+    }
+
+    def configure() {
+        def templatesDir = pathJoin(context.getServiceDirectory(),"templates")
+        def templateEngine = new groovy.text.SimpleTemplateEngine()
+        def puppetConfTemplate = new File(templatesDir, "puppet.conf").getText()
+        def puppetConf = templateEngine.createTemplate(puppetConfTemplate).make(
+                            [environment: sanitizeEnvironment(puppetConfig.environment),
+                            server: puppetConfig.server,
+                            cloudify_module_path:pathJoin(local_repo_dir, "modules")]
+                        )
+        sudoWriteFile("/etc/puppet/puppet.conf", puppetConf.toString())
     }
 
     def loadManifest(repoType, repoUrl) {
@@ -171,6 +173,15 @@ class PuppetBootstrap {
         )
     }
 
+    def puppetAgent(tags=[]) { 
+        def tagArgs = tags.any() ? ["--tags", tags.join(",")] : []
+        def args = ["puppet", "agent",
+            "--onetime", "--no-daemonize",
+            "--logdest", "console"]
+        args += tagArgs
+        sudo(args)
+    }
+
     // Execute arbitrary puppet code
     def puppetExecute(String puppetCode) {
         File tmp_file = File.createTempFile("apply_manifest", ".pp")
@@ -185,6 +196,14 @@ class PuppetBootstrap {
 
     def cleanup_local_repo() {
         sh("rm -rf '${pathJoin(local_repo_dir,"*")}'")
+    }
+
+    def sanitizeEnvironment(environment) { 
+        def environ = environment.tr("- .", "_")    
+        if (!(environment =~ /[A-Za-z0-9_]+/).matches()) {
+            throw new Exception("puppet environment must contain only alphanumeric characters or underscores, you gave \"${environment}\"")
+        }
+        return environ
     }
 }
 
