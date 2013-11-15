@@ -71,6 +71,7 @@ service {
             }
         }
       }
+      return true // refrain from returning a number, GSC might think it's a pid
     }
 
     customCommands([
