@@ -25,7 +25,7 @@ class PuppetBootstrap {
     def osConfig
     def os
     ServiceContext context = null
-    def puppetPackages = ["puppet"]
+    def extraPuppetPackages = []
     String local_repo_dir = underHomeDir("cloudify/puppet")
     String local_custom_facts = "/opt/cloudify/puppet/facts"
     String cloudify_module_dir = "/opt/cloudify/puppet/modules/cloudify"
@@ -212,7 +212,8 @@ class DebianBootstrap extends PuppetBootstrap {
 
     def install(options) {
         installPuppetlabsRepo()
-        installPkgs(puppetPackages)
+        installPkg("puppet", puppetConfig.version)
+        if (extraPupppetPackages.any()) { installPkgs(extraPuppetPackages) }
         return super.install(options)
     }
 
@@ -228,19 +229,28 @@ class DebianBootstrap extends PuppetBootstrap {
         sudo("apt-get update")
     }
 
+    def installPkg(String pkg, version=null) {
+        if (version.is(null) || version.isEmpty()) {
+            sudo("apt-get install -y ${pkg}")
+        } else {
+            sudo("apt-get install -y ${pkg}=${version}")
+        }
+    }
+
     def installPkgs(List pkgs) {
         sudo("apt-get install -y ${pkgs.join(" ")}")
     }
 }
 
 class RHELBootstrap extends PuppetBootstrap {
-    def puppetPackages = super.puppetPackages + ["rubygem-json"]
+    def extraPuppetPackages = super.extraPuppetPackages + ["rubygem-json"]
 
     def RHELBootstrap(options) { super(options) }
 
     def install(options) {
         installPuppetlabsRepo()
-        installPkgs(puppetPackages)
+        installPkg("puppet", puppetConfig.version)
+        installPkgs(extraPuppetPackages)
         return super.install(options)
     }
 
@@ -253,19 +263,36 @@ class RHELBootstrap extends PuppetBootstrap {
         sudo("rpm -ivh ${repo}")    
     }
 
+    def installPkg(String pkg, version=null) {
+        if (version.is(null) || version.isEmpty()) {
+            sudo("yum install -y ${pkg}")
+        } else {
+            sudo("yum install -y ${pkg}-${version}")
+        }
+    }
+
     def installPkgs(List pkgs) {
         sudo("yum install -y ${pkgs.join(" ")}")
     }
 }
 
 class AmazonBootstrap extends PuppetBootstrap {
-    def puppetPackages = super.puppetPackages + ["rubygem-json"]
+    def extraPuppetPackages = super.extraPuppetPackages + ["rubygem-json"]
 
     def AmazonBootstrap(options) { super(options) }
 
     def install(options) {
-        installPkgs(puppetPackages)
+        installPkg("puppet", puppetConfig.version)
+        installPkgs(extraPuppetPackages)
         return super.install(options)
+    }
+
+    def installPkg(String pkg, version=null) {
+        if (version.is(null) || version.isEmpty()) {
+            sudo("yum install -y ${pkg}")
+        } else {
+            sudo("yum install -y ${pkg}-${version}")
+        }
     }
 
     def installPkgs(List pkgs) {
@@ -280,7 +307,7 @@ class SuSEBootstrap extends PuppetBootstrap {
 
     def install(options) {
         installPuppetlabsRepo()
-        installPkgs(puppetPackages)
+        if (extraPuppetPackages.any()) { installPkgs(extraPuppetPackages) }
         return super.install(options)
     }
 
