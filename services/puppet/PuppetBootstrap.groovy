@@ -267,7 +267,19 @@ class RHELBootstrap extends PuppetBootstrap {
         if (version.is(null) || version.isEmpty()) {
             sudo("yum install -y ${pkg}")
         } else {
-            sudo("yum install -y ${pkg}-${version}")
+            versions = []
+            sh("yum -q --showduplicates list available ${pkg}", true, [:],
+                { proc -> 
+                    proc.inputStream.readLines().findAll { line -> line.startsWith(pkg) }
+                    .collect{ line -> line.split()[1] }
+                    .each{ versions << it }
+                })
+            versionString = versions.find{ ver -> ver.contains(version)}
+            if (!versionString.is(null)) {
+                sudo("yum install -y ${pkg}-${versionString}")
+            } else {
+                throw new Exception("Version ${version} not found ${pkg}")
+            }    
         }
     }
 

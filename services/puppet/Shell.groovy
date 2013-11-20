@@ -46,7 +46,7 @@ def static sh(Map opts, ArrayList command, shellify=true) {
 def static sh(Map opts, String command, shellify=true) {
     sh(command, shellify, opts)
 }
-def static sh(command, shellify=true, Map opts=[:]) {
+def static sh(command, shellify=true, Map opts=[:], Closure block=null) {
     Map env = opts.env?: [:]
     println("Running \"${command}\"")
     if (shellify) {command = shellify_cmd(command)}
@@ -57,14 +57,19 @@ def static sh(command, shellify=true, Map opts=[:]) {
     def proc = startProcess(*args)
     def stdout = ""
     def stderr = ""
-    proc.inputStream.eachLine { println "STDOUT: ${it}";  stdout += "${it}\n" }
-    proc.errorStream.eachLine { println "STDERR: ${it}";  stderr += "${it}\n" }
+    if (!block.is(null)) {
+        ret = block.call(proc)
+    } else {
+        proc.inputStream.eachLine { println "STDOUT: ${it}";  stdout += "${it}\n" }
+        proc.errorStream.eachLine { println "STDERR: ${it}";  stderr += "${it}\n" }
+
+    }
     proc.waitFor()
     println("Command finished with return code ${proc.exitValue()}")
     if ((! opts.ignore_failure?: false) && proc.exitValue() != 0) {
         throw new ShellRuntimeException(command, proc.exitValue(), stdout, stderr)
     }
-    return proc.exitValue()
+    return ret
 }
 
 def static test(command) {
