@@ -15,6 +15,7 @@
 *******************************************************************************/
 import static Shell.*
 import static ChefLoader
+import groovy.json.JsonOutput
 
 service {
     extend "../chef"
@@ -30,8 +31,9 @@ service {
 
 	lifecycle{
         start {
-            def privateIp = System.getenv()["CLOUDIFY_AGENT_ENV_PRIVATE_IP"]
-            def serverUrl = "https://${privateIp}:443" as String
+            def ipAddress = context.privateAddress
+            if (ipAddress == null || ipAddress.trim() == "") ipAddress = context.publicAddress
+            def serverUrl = "https://${ipAddress}:443" as String
             def bootstrap = ChefBootstrap.getBootstrap(installFlavor:"fatBinary", context:context)
 
             def chefServerConfig = [:]
@@ -40,6 +42,7 @@ service {
             if (!externallyRoutableHostname) { // see properties file
                 chefServerConfig["bookshelf"] = ["url": serverUrl ]
                 chefServerConfig["nginx"]     = ["url": serverUrl ]
+                chefServerConfig["erchef"]    = ["s3_url_ttl": "21600"]
             }
 
             bootstrap.runSolo([
@@ -50,9 +53,9 @@ service {
                 "run_list": ["recipe[chef-server]"]
             ])
 
-            //setting the global attributes to be available for all chef clients
-            context.attributes.global["chef_validation.pem"] = sudoReadFile("/etc/chef-server/chef-validator.pem")
-            context.attributes.global["chef_server_url"] = serverUrl
+            //setting the thisApplication attributes to be available for all chef clients in this application
+            context.attributes.thisApplication["chef_validation.pem"] = sudoReadFile("/etc/chef-server/chef-validator.pem")
+            context.attributes.thisApplication["chef_server_url"] = serverUrl
         }
 
 		startDetectionTimeoutSecs 600
@@ -102,6 +105,17 @@ service {
             chef_loader.invokeKnife(["node", "delete", node_name, "-y"])
             chef_loader.invokeKnife(["client", "delete", node_name, "-y"])
             return "${node_name} cleaned up"
+        },
+        "createNode": { String node_name ->
+            chef_loader = ChefLoader.get_loader()
+								
+            def jsonFileContent = "{ \"name\": \"${node_name}\", \"chef_environment\": \"_default\", \"json_class\": \"Chef::Node\", \"automatic\": { }, \"normal\": { }, \"chef_type\": \"node\", \"default\": { }, \"override\": { }, \"run_list\": [ ] }"
+            def currentNodeJsonFile = "/tmp/currentNode.json"
+            sudoWriteFile( "${currentNodeJsonFile}" ,jsonFileContent)
+				
+            def createNodeArgs = [ "node" , "from", "file", "${currentNodeJsonFile}" ]
+            println "creating Node ${node_name} : knife node from file ${currentNodeJsonFile} ..."
+            return chef_loader.invokeKnife(createNodeArgs)
         },
         "knife": { String... args=[] ->
             chef_loader = ChefLoader.get_loader()

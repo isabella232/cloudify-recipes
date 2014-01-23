@@ -16,7 +16,7 @@
 import groovy.text.SimpleTemplateEngine
 import groovy.util.ConfigSlurper;
 import org.cloudifysource.dsl.utils.ServiceUtils
-import org.cloudifysource.dsl.context.ServiceContextFactory
+import org.cloudifysource.utilitydomain.context.ServiceContextFactory
 
 
 context=ServiceContextFactory.serviceContext
@@ -40,6 +40,10 @@ if(config.license!=null && config.license.size()>0){
 	new File("${context.serviceDirectory}/${config.installDir}/${config.xapDir}/gslicense.xml").withWriter{ out->
   		out.write(template.toString())
 	}
+}else{
+    new AntBuilder().sequential {
+        delete(file:"${context.serviceDirectory}/${config.installDir}/${config.xapDir}/gslicense.xml")
+    }
 }
 
 

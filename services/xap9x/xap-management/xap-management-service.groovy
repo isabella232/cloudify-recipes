@@ -48,7 +48,7 @@ service {
 
 		start "xap_start.groovy"
 
-	        startDetectionTimeoutSecs 60
+	        startDetectionTimeoutSecs 180
         	startDetection {
             		ServiceUtils.isPortOccupied(uiPort)
         	}
@@ -83,17 +83,17 @@ service {
 		}
 
 		details {
-			def currPublicIP
-			
+			def currPublicIP = context.getPublicAddress()
+
 			if (  context.isLocalCloud()  ) {
-				currPublicIP = InetAddress.localHost.hostAddress
+				currPort = 9099
 			}
 			else {
-				currPublicIP =context.getPublicAddress()
+                currPort = 8099
 			}
-	
-			def applicationURL = "http://${currPublicIP}:${uiPort}"
-		
+
+			def applicationURL = "http://${currPublicIP}:${currPort}"
+
 				return [
 					"Management UI":"<a href=\"${applicationURL}\" target=\"_blank\">${applicationURL}</a>"
 				]
@@ -101,9 +101,10 @@ service {
 		
 		monitors {
 			if(admin==null){
+                ip=InetAddress.getLocalHost().getHostAddress()
 				admin = new AdminFactory()
 				.useDaemonThreads(true)
-				.addLocators("127.0.0.1:"+lusPort)
+				.addLocators("${ip}:"+lusPort)
 				.create();
 			}
 
@@ -141,7 +142,7 @@ service {
 		"deploy-pu-basic": {puurl->
 			util.invokeLocal(context,"_deploy-pu", [
 				"deploy-pu-puurl":puurl,
-				"deploy-pu-schema":"none",
+				"deploy-pu-schema":"partitioned-sync2backup",
 				"deploy-pu-partitions":1,
 				"deploy-pu-backups":0,
 				"deploy-pu-maxpervm":1,
@@ -149,7 +150,9 @@ service {
 				"deploy-pu-puname":(new File(puurl).name)
 			])
 		},
-					
+		//usage examples:
+        //invoke xap-management  deploy-grid myIMDG partitioned-sync2backup 1 0 0 0 - deploy single space without backup
+        //invoke xap-management  deploy-grid myIMDG partitioned-sync2backup 1 1 0 0 - deploy primary backup space
 		"deploy-grid"	: {name,schema,partitions,backups,maxpervm,maxpermachine->
 			util.invokeLocal(context,"_deploy-grid", [
 				"deploy-grid-name":name,
@@ -160,6 +163,20 @@ service {
 				"deploy-grid-maxpermachine":maxpermachine
 			])
 		},
+        //usage examples:
+        //invoke xap-management  deploy-grid-basic myIMDG - deploy primary backup space
+        "deploy-grid-basic"	: {name->
+            util.invokeLocal(context,"_deploy-grid", [
+                "deploy-grid-name":name,
+                "deploy-grid-schema":"partitioned-sync2backup",
+                "deploy-grid-partitions":1,
+                "deploy-grid-backups":1,
+                "deploy-grid-maxpervm":0,
+                "deploy-grid-maxpermachine":0
+            ])
+        },
+        //usage examples:
+        //invoke xap-management  undeploy-grid myIMDG - undeploy space
 		"undeploy-grid" : { name ->
 			util.invokeLocal(context,"_undeploy-grid", [
 				"undeploy-grid-name":name

@@ -16,7 +16,7 @@
 import java.util.concurrent.TimeUnit
 
 import org.cloudifysource.dsl.utils.ServiceUtils
-import org.cloudifysource.dsl.context.ServiceContextFactory
+import org.cloudifysource.utilitydomain.context.ServiceContextFactory
 import org.openspaces.admin.AdminFactory
 import org.openspaces.admin.application.config.ApplicationConfig
 import org.openspaces.admin.pu.config.ProcessingUnitConfig
@@ -36,15 +36,16 @@ maxpermachine=context.attributes.thisInstance["deploy-grid-maxpermachine"]
 
 assert (name!=null),"name must not be null"
 if(partitions==null||partitions.toInteger()<=0)partitions ="1"
-if(backups==null||backups.toInteger()<0)backups="0"
+if(backups==null||backups.toInteger()<0)backups="1"
 if(schema==null||schema=="")schema="partitioned-sync2backup"
-if(maxpervm==null||maxpervm.toInteger()<=0)maxpervm="1"
-if(maxpermachine==null||maxpermachine.toInteger()<=0)maxpermachine="1"
+if(maxpervm==null||maxpervm.toInteger()<=0)maxpervm="0"
+if(maxpermachine==null||maxpermachine.toInteger()<=0)maxpermachine="0"
 
 //DEPLOY
 
 // find gsm
-admin=new AdminFactory().useDaemonThreads(true).addLocators("127.0.0.1:${config.lusPort}").createAdmin();
+ip=InetAddress.getLocalHost().getHostAddress()
+admin=new AdminFactory().useDaemonThreads(true).addLocators("${ip}:${config.lusPort}").createAdmin();
 gsm=admin.gridServiceManagers.waitForAtLeastOne(1,TimeUnit.MINUTES)
 assert gsm!=null
 

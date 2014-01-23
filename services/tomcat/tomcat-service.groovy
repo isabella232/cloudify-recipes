@@ -82,12 +82,14 @@ service {
 				def apacheService = context.waitForService("apacheLB", 180, TimeUnit.SECONDS)
 				println "tomcat-service.groovy: invoking add-node of apacheLB ..."
 				
-				def privateIP = context.privateAddress
-				println "tomcat-service.groovy: privateIP is ${privateIP} ..."
+				def ipAddress = context.privateAddress
+				if (ipAddress == null || ipAddress.trim() == "") ipAddress = context.publicAddress
+				
+				println "tomcat-service.groovy: ipAddress is ${ipAddress} ..."
 				
 				def contextPath = context.attributes.thisInstance["contextPath"]
 				if (contextPath == 'ROOT') contextPath="" // ROOT means "" by convention in Tomcat
-				def currURL="http://${privateIP}:${currHttpPort}/${contextPath}"
+				def currURL="http://${ipAddress}:${currHttpPort}/${contextPath}"
 				println "tomcat-service.groovy: About to add ${currURL} to apacheLB ..."
 				apacheService.invoke("addNode", currURL as String, instanceId as String)
 				println "tomcat-service.groovy: tomcat Post-start ended"
@@ -101,11 +103,12 @@ service {
 					def apacheService = context.waitForService("apacheLB", 180, TimeUnit.SECONDS)
 					
 					if ( apacheService != null ) { 
-						def privateIP = context.privateAddress
-						println "tomcat-service.groovy: privateIP is ${privateIP} ..."
+						def ipAddress = context.privateAddress
+						if (ipAddress == null || ipAddress.trim() == "") ipAddress = context.publicAddress
+						println "tomcat-service.groovy: ipAddress is ${ipAddress} ..."
 						def contextPath = context.attributes.thisInstance["contextPath"]
 						if (contextPath == 'ROOT') contextPath="" // ROOT means "" by convention in Tomcat
-						def currURL="http://${privateIP}:${currHttpPort}/${contextPath}"
+						def currURL="http://${ipAddress}:${currHttpPort}/${contextPath}"
 						println "tomcat-service.groovy: About to remove ${currURL} from apacheLB ..."
 						apacheService.invoke("removeNode", currURL as String, instanceId as String)
 					}
@@ -262,7 +265,7 @@ service {
 		protocolDescription = "HTTP"
 	}
 	
-	scaleCooldownInSeconds 60
+	scaleCooldownInSeconds 300
 	samplingPeriodInSeconds 1
 
 	// Defines an automatic scaling rule based on "counter" metric value
@@ -270,18 +273,18 @@ service {
 		scalingRule {
 
 			serviceStatistics {
-				metric "Total Requests Count"
-				statistics Statistics.maximumThroughput
+				metric "Current Http Threads Busy"
+				statistics Statistics.maximumOfMaximums
 				movingTimeRangeInSeconds 20
 			}
 
 			highThreshold {
-				value 1
+				value 10
 				instancesIncrease 1
 			}
 
 			lowThreshold {
-				value 0.2
+				value 1
 				instancesDecrease 1
 			}
 		}

@@ -16,7 +16,7 @@
 import groovy.text.SimpleTemplateEngine
 import groovy.util.ConfigSlurper;
 import org.cloudifysource.dsl.utils.ServiceUtils
-import org.cloudifysource.dsl.context.ServiceContextFactory
+import org.cloudifysource.utilitydomain.context.ServiceContextFactory
 
 
 context=ServiceContextFactory.serviceContext
@@ -28,15 +28,19 @@ new AntBuilder().sequential {
 	unzip(src:"${config.installDir}/${config.zipName}", dest:config.installDir, overwrite:true)
 }
 
+webuiPort=8099
+if (context.isLocalCloud()) {
+    webuiPort=9099
+}
 // Update gs ui port
 if(ServiceUtils.isWindows()){
   new AntBuilder().sequential {
-   replace(file:"${context.serviceDirectory}/${config.installDir}/${config.xapDir}/tools/gs-webui/gs-webui.sh",token:"8099",value:"${config.uiPort}")
+   replace(file:"${context.serviceDirectory}/${config.installDir}/${config.xapDir}/tools/gs-webui/gs-webui.bat",token:"8099",value:webuiPort)
   }
 }
 else{
   new AntBuilder().sequential {
-   replace(file:"${context.serviceDirectory}/${config.installDir}/${config.xapDir}/tools/gs-webui/gs-webui.sh",token:"8099",value:"${config.uiPort}")
+   replace(file:"${context.serviceDirectory}/${config.installDir}/${config.xapDir}/tools/gs-webui/gs-webui.sh",token:"8099",value:webuiPort)
    chmod(dir:"${context.serviceDirectory}/${config.installDir}/${config.xapDir}/bin", perm:"+x", includes:"*.sh")
    chmod(dir:"${context.serviceDirectory}/${config.installDir}/${config.xapDir}/tools/gs-webui", perm:"+x", includes:"*.sh")
   }
@@ -52,5 +56,8 @@ if(config.license!=null && config.license.size()>0){
 	new File("${config.installDir}/${config.xapDir}/gslicense.xml").withWriter{ out->
   		out.write(template.toString())
 	}
+}else{
+    new AntBuilder().sequential {
+        delete(file:"${context.serviceDirectory}/${config.installDir}/${config.xapDir}/gslicense.xml")
+    }
 }
-

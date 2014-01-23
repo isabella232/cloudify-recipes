@@ -16,7 +16,7 @@
 import java.util.concurrent.TimeUnit
 
 import org.cloudifysource.dsl.utils.ServiceUtils
-import org.cloudifysource.dsl.context.ServiceContextFactory
+import org.cloudifysource.utilitydomain.context.ServiceContextFactory
 import org.openspaces.admin.AdminFactory
 import org.openspaces.admin.application.config.ApplicationConfig
 import org.openspaces.admin.pu.config.ProcessingUnitConfig
@@ -34,7 +34,8 @@ assert (name!=null),"name must not be null"
 //UNDEPLOY
 
 // find gsm
-admin=new AdminFactory().addLocators("127.0.0.1:${config.lusPort}").createAdmin();
+ip=InetAddress.getLocalHost().getHostAddress()
+admin=new AdminFactory().useDaemonThreads(true).addLocators("${ip}:${config.lusPort}").createAdmin();
 gsm=admin.gridServiceManagers.waitForAtLeastOne(10,TimeUnit.SECONDS)
 assert gsm!=null
 
