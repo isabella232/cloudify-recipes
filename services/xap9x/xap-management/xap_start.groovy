@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2011 GigaSpaces Technologies Ltd. All rights reserved
+* Copyright (c) 2014 GigaSpaces Technologies Ltd. All rights reserved
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -16,11 +16,12 @@
 import java.util.concurrent.TimeUnit
 import groovy.util.ConfigSlurper;
 import org.cloudifysource.utilitydomain.context.ServiceContextFactory
-
+import org.openspaces.admin.AdminFactory
 
 context=ServiceContextFactory.serviceContext
 config = new ConfigSlurper().parse(new File(context.serviceName+"-service.properties").toURL())
-ip=InetAddress.getLocalHost().getHostAddress()
+ip=context.getPrivateAddress()
+println "Private IP: "+ip
 uuid=context.attributes.thisInstance.uuid
 if(uuid==null){
     uuid=UUID.randomUUID().toString()
@@ -31,28 +32,38 @@ if(uuid==null){
 //update container nodes if any (restart scenario)
 def containerService=context.waitForService(config.containerServiceName,5,TimeUnit.SECONDS)
 if(containerService!=null){
-    println "invoking update hosts"
+    println "invoking update hosts with: "+ip+"=lus${context.instanceId}"
     containerService.invoke("update-hosts",ip,"lus${context.instanceId}" as String)
 }
 else{
     println "no service ${config.containerServiceName} found"
 }
 
+//Run butterfly if enabled
+if (config.butterflyEnabled) {
+    new AntBuilder().sequential {
+        exec(executable:"./butterfly_start.sh", osfamily:"unix",
+                output:"butterfly_start.${System.currentTimeMillis()}.out",
+                error:"butterfly_start.${System.currentTimeMillis()}.err"
+        ) {
+            env(key:"LOOKUPLOCATORS",value:"${ip}:${config.lusPort}")
+            env(key:"NIC_ADDR",value:"${ip}")
+        }
+    }
+}
 //Run the start script
-
 new AntBuilder().sequential {
     exec(executable:"runxap.bat", osfamily:"windows",
             output:"runxap.${System.currentTimeMillis()}.out",
             error:"runxap.${System.currentTimeMillis()}.err"
     ){
         env(key:"XAPDIR", value:"${config.installDir}\\${config.xapDir}")
-        env(key:"LUS_JAVA_OPTIONS",value:"${config.lus_jvm_options} -Dcom.sun.jini.reggie.initialUnicastDiscoveryPort=${config.lusPort} -Dcom.gs.multicast.enabled=false  -DUUID=${uuid}")
-        env(key:"GSA_JAVA_OPTIONS",value:"${config.gsm_jvm_options} -Dcom.sun.jini.reggie.initialUnicastDiscoveryPort=${config.lusPort} -Dcom.gs.multicast.enabled=false -DUUID=${uuid}")
-        env(key:"GSM_JAVA_OPTIONS",value:"${config.gsm_jvm_options} -Dcom.sun.jini.reggie.initialUnicastDiscoveryPort=${config.lusPort} -Dcom.gs.multicast.enabled=false -DUUID=${uuid}")
+        env(key:"LUS_JAVA_OPTIONS",value:"${config.lus_jvm_options} -Dcom.gs.multicast.enabled=false -DUUID=${uuid} -Dcom.gs.multicast.discoveryPort=${config.lusPort} -Dcom.sun.jini.reggie.initialUnicastDiscoveryPort=${config.lusPort} -Dcom.gigaspaces.start.httpPort=${config.httpPort} -Dcom.gigaspaces.system.registryPort=${config.registryPort} -Dcom.gs.transport_protocol.lrmi.bind-port=${config.bindPort}")
+        env(key:"GSA_JAVA_OPTIONS",value:"${config.gsm_jvm_options} -Dcom.gs.multicast.enabled=false -DUUID=${uuid} -Dcom.gs.multicast.discoveryPort=${config.lusPort} -Dcom.sun.jini.reggie.initialUnicastDiscoveryPort=${config.lusPort} -Dcom.gigaspaces.start.httpPort=${config.httpPort} -Dcom.gigaspaces.system.registryPort=${config.registryPort} -Dcom.gs.transport_protocol.lrmi.bind-port=${config.bindPort}")
+        env(key:"GSM_JAVA_OPTIONS",value:"${config.gsm_jvm_options} -Dcom.gs.multicast.enabled=false -DUUID=${uuid} -Dcom.gs.multicast.discoveryPort=${config.lusPort} -Dcom.sun.jini.reggie.initialUnicastDiscoveryPort=${config.lusPort} -Dcom.gigaspaces.start.httpPort=${config.httpPort} -Dcom.gigaspaces.system.registryPort=${config.registryPort} -Dcom.gs.transport_protocol.lrmi.bind-port=${config.bindPort}")
         env(key:"WEBUI_JAVA_OPTIONS",value:"${config.webui_jvm_options} -Dcom.gs.multicast.enabled=false -DUUID=${uuid}")
         env(key:"LOOKUPLOCATORS",value:"${ip}:${config.lusPort}")
         env(key:"NIC_ADDR",value:"${ip}")
-        env(key:"WEBUI_PORT",value:"${config.uiPort}")
     }
 
     chmod(dir:"${context.serviceDirectory}",perm:"+x",includes:"*.sh")
@@ -64,16 +75,16 @@ new AntBuilder().sequential {
             error:"runxap.${System.currentTimeMillis()}.err"
     ){
         env(key:"XAPDIR", value:"${context.serviceDirectory}/${config.installDir}/${config.xapDir}")
-        env(key:"LUS_JAVA_OPTIONS",value:"${config.lus_jvm_options} -Dcom.sun.jini.reggie.initialUnicastDiscoveryPort=${config.lusPort} -Dcom.gs.multicast.enabled=false -DUUID=${uuid}")
-        env(key:"GSA_JAVA_OPTIONS",value:"${config.gsm_jvm_options} -Dcom.sun.jini.reggie.initialUnicastDiscoveryPort=${config.lusPort} -Dcom.gs.multicast.enabled=false -DUUID=${uuid}")
-        env(key:"GSM_JAVA_OPTIONS",value:"${config.gsm_jvm_options} -Dcom.sun.jini.reggie.initialUnicastDiscoveryPort=${config.lusPort} -Dcom.gs.multicast.enabled=false -DUUID=${uuid}")
+        env(key:"LUS_JAVA_OPTIONS",value:"${config.lus_jvm_options} -Dcom.gs.multicast.enabled=false -DUUID=${uuid} -Dcom.gs.multicast.discoveryPort=${config.lusPort} -Dcom.sun.jini.reggie.initialUnicastDiscoveryPort=${config.lusPort} -Dcom.gigaspaces.start.httpPort=${config.httpPort} -Dcom.gigaspaces.system.registryPort=${config.registryPort} -Dcom.gs.transport_protocol.lrmi.bind-port=${config.bindPort}")
+        env(key:"GSA_JAVA_OPTIONS",value:"${config.gsm_jvm_options} -Dcom.gs.multicast.enabled=false -DUUID=${uuid} -Dcom.gs.multicast.discoveryPort=${config.lusPort} -Dcom.sun.jini.reggie.initialUnicastDiscoveryPort=${config.lusPort} -Dcom.gigaspaces.start.httpPort=${config.httpPort} -Dcom.gigaspaces.system.registryPort=${config.registryPort} -Dcom.gs.transport_protocol.lrmi.bind-port=${config.bindPort}")
+        env(key:"GSM_JAVA_OPTIONS",value:"${config.gsm_jvm_options} -Dcom.gs.multicast.enabled=false -DUUID=${uuid} -Dcom.gs.multicast.discoveryPort=${config.lusPort} -Dcom.sun.jini.reggie.initialUnicastDiscoveryPort=${config.lusPort} -Dcom.gigaspaces.start.httpPort=${config.httpPort} -Dcom.gigaspaces.system.registryPort=${config.registryPort} -Dcom.gs.transport_protocol.lrmi.bind-port=${config.bindPort}")
         env(key:"WEBUI_JAVA_OPTIONS",value:"${config.webui_jvm_options} -Dcom.gs.multicast.enabled=false -DUUID=${uuid}")
         env(key:"LOOKUPLOCATORS",value:"${ip}:${config.lusPort}")
         env(key:"NIC_ADDR",value:"${ip}")
-        env(key:"WEBUI_PORT",value:"${config.uiPort}")
     }
 
-    println "XAPSTART EXITING"
+
 
 }
 
+println "XAPSTART EXITING"

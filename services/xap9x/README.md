@@ -25,6 +25,11 @@ Note that in localcloud mode the webui url is http://localhost:9099
 
 The recipe provides a link to the XAP Web UI in the details section of the Cloudify UI.
 
+The <i>xap-management</i> recipe launches a butterfly server by default (see <a href="#recipe-3-butterfly">butterfly</a> below).
+Set the flag "butterflyEnabled" in the properties file to true/false to enable/disable launching butterfly server.
+<br/>Url: http://ip:8080.
+Note that in localcloud mode the url is: http://localhost:8081
+
 ###### Custom Commands
 
 The recipe provides several custom commands:
@@ -65,3 +70,9 @@ Notes: deploys a non-partitioned, single instance cluster.  Useful for simple ap
 #####Recipe #2: xap-container
 
 The <i>xap-container</i> recipe starts a single GSC.  When it starts it locates the management nodes and updates the /etc/hosts file (no Windows support yet).  The recipe has effectively no upper limit on instances and is elastic.  It has no custom commands intended for public use.
+
+
+#####Recipe #3: butterfly
+The <i>butterfly</i> recipe starts a web terminal based on websocket and tornado (butterfly).
+Url: <a href="http://localcloud:8080">http://localcloud:8080</a>
+<br/>Works only on Linux.

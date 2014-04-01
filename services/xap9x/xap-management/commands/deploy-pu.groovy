@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2011 GigaSpaces Technologies Ltd. All rights reserved
+* Copyright (c) 2014 GigaSpaces Technologies Ltd. All rights reserved
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -44,10 +44,15 @@ mgmt_service.instances.each{locators+="${it.hostAddress},"}
 
 
 // find gsm
-ip=InetAddress.getLocalHost().getHostAddress()
+ip=context.getPrivateAddress()
 admin=new AdminFactory().useDaemonThreads(true).addLocators("${ip}:${config.lusPort}").createAdmin();
 gsm=admin.gridServiceManagers.waitForAtLeastOne(1,TimeUnit.MINUTES)
 assert gsm!=null
+
+// make sure there are GSCs
+gscs=admin.gridServiceContainers
+gscs.waitFor(1,1,TimeUnit.MINUTES)
+assert (gscs.size!=0),"no containers found"
 
 // grab file
 new AntBuilder().sequential {	

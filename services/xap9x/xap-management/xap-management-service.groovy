@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2012 GigaSpaces Technologies Ltd. All rights reserved
+* Copyright (c) 2014 GigaSpaces Technologies Ltd. All rights reserved
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -48,6 +48,8 @@ service {
 
 		start "xap_start.groovy"
 
+        postStop "xap_postStop.groovy"
+
 	        startDetectionTimeoutSecs 180
         	startDetection {
             		ServiceUtils.isPortOccupied(uiPort)
@@ -93,15 +95,26 @@ service {
 			}
 
 			def applicationURL = "http://${currPublicIP}:${currPort}"
-
-				return [
-					"Management UI":"<a href=\"${applicationURL}\" target=\"_blank\">${applicationURL}</a>"
-				]
+            def xapInstallationDir = "${context.serviceDirectory}/${installDir}/${name}/"
+            def interactiveShellURL = "http://${currPublicIP}:8081/wd/${xapInstallationDir}/bin"
+            def xapShellURL = "http://${currPublicIP}:8081/wd/${xapInstallationDir}/tools/groovy/bin"
+            if (butterflyEnabled) {
+                return [
+                        "Management UI":"<a href=\"${applicationURL}\" target=\"_blank\">${applicationURL}</a>",
+                        "GigaSpaces Interactive Shell URL":"<a href=\"${interactiveShellURL}\" target=\"_blank\">${interactiveShellURL}</a>",
+                        "Groovy Interactive Shell URL":"<a href=\"${xapShellURL}\" target=\"_blank\">${xapShellURL}</a>"
+                ]
+            } else {
+                return [
+                        "Management UI":"<a href=\"${applicationURL}\" target=\"_blank\">${applicationURL}</a>"
+                ]
+            }
 		}
 		
 		monitors {
 			if(admin==null){
-                ip=InetAddress.getLocalHost().getHostAddress()
+
+                ip=context.getPrivateAddress()
 				admin = new AdminFactory()
 				.useDaemonThreads(true)
 				.addLocators("${ip}:"+lusPort)
@@ -274,7 +287,28 @@ service {
 				])
 			}
 		])
-	}
+    }
+    network {
+        template "APPLICATION_NET"
+        accessRules {
+            incoming ([
+                    accessRule {
+                        type "PUBLIC"
+                        portRange 8099
+                    },
+                    accessRule {
+                        type "PUBLIC"
+                        portRange 9099
+                    },
+                    accessRule {
+                        type "APPLICATION"
+                        portRange "4242-4342"
+                    },
+                    accessRule {
+                        type "PUBLIC"
+                        portRange 8080
+                    }
+            ])
+        }
+    }
 }
-
-

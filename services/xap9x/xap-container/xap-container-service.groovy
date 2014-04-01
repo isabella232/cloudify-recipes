@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2012 GigaSpaces Technologies Ltd. All rights reserved
+* Copyright (c) 2014 GigaSpaces Technologies Ltd. All rights reserved
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ service {
 	type "APP_SERVER"
 	icon "xap.png"
 	elastic true
-	numInstances 1
+	numInstances containerCount
 	minAllowedInstances 1
 	maxAllowedInstances maxinstances
 
@@ -42,6 +42,10 @@ service {
 		start "xap_start.groovy"
 
         postStart "xap_postStart.groovy"
+
+        preStop "xap_preStop.groovy"
+
+        postStop "xap_postStop.groovy"
 
 		locator {
 			uuid=context.attributes.thisInstance.uuid
@@ -98,6 +102,18 @@ service {
 		]
 		)
 	}
+
+    network {
+        template "APPLICATION_NET"
+        accessRules {
+            incoming ([
+                    accessRule {
+                        type "APPLICATION"
+                        portRange "4242-4342"
+                    }
+            ])
+        }
+    }
 }
 
 

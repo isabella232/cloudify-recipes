@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright (c) 2013 GigaSpaces Technologies Ltd. All rights reserved
+* Copyright (c) 2014 GigaSpaces Technologies Ltd. All rights reserved
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ assert (name!=null),"name must not be null"
 //UNDEPLOY
 
 // find gsm
-ip=InetAddress.getLocalHost().getHostAddress()
+ip=context.getPrivateAddress()
 admin=new AdminFactory().useDaemonThreads(true).addLocators("${ip}:${config.lusPort}").createAdmin();
 gsm=admin.gridServiceManagers.waitForAtLeastOne(10,TimeUnit.SECONDS)
 assert gsm!=null
